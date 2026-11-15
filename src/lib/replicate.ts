@@ -26,9 +26,10 @@ export async function transcribeAudio(audioBuffer: Buffer, mimeType: string) {
       },
     })) as { text?: string; segments?: unknown[] };
 
-    const text = output?.text?.trim();
-    if (!text) throw new Error("Transcrição vazia retornada pelo modelo.");
-    return text;
+    // Texto vazio é normal para um bloco de silêncio/ruído — não é um erro,
+    // então retornamos string vazia em vez de lançar (o chamador decide o
+    // que fazer com isso, sem mostrar "falha" ao usuário por um bloco mudo).
+    return output?.text?.trim() || "";
   } finally {
     await replicate.files.delete(uploaded.id).catch(() => {});
   }
