@@ -61,7 +61,7 @@
   // WhatsApp decripta um monte de coisa pequena o tempo todo (texto,
   // metadados), então guardamos os últimos candidatos com tamanho e hora,
   // e escolhemos o maior que apareceu depois do clique no play.
-  const MIN_AUDIO_BYTES = 2000;
+  const MIN_AUDIO_BYTES = 800;
   const capturedBuffers = [];
   window.addEventListener("__ovyAudioBuffer", (event) => {
     const { buffer, source, size } = event.detail || {};
@@ -114,7 +114,7 @@
     // mais rápido possível.
     const start = Date.now();
     let best = null;
-    while (Date.now() - start < 8000) {
+    while (Date.now() - start < 15000) {
       const candidates = capturedBuffers.filter((c) => c.timestamp >= clickTime - 200);
       if (candidates.length > 0) {
         best = candidates.reduce((a, b) => (b.size > a.size ? b : a));
@@ -178,6 +178,7 @@
 
   function attachButton(playButton) {
     if (playButton.getAttribute(PROCESSED_ATTR)) return;
+    if (!isExtensionContextValid()) return; // extensão foi atualizada; essa instância antiga da página não deve mais agir.
     playButton.setAttribute(PROCESSED_ATTR, "1");
 
     // O container da mensagem é onde procuramos o botão de "pausar"
