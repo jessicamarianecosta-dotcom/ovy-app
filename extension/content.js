@@ -30,8 +30,10 @@
     .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; opacity: 0.85; }
     .ovy-btn.ovy-done { background: #16a34a; }
     .ovy-btn img {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
       display: block;
       pointer-events: none;
     }
