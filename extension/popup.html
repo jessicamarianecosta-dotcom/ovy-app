@@ -49,6 +49,23 @@
         margin-top: 10px;
         font-size: 12px;
       }
+      hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin: 14px 0;
+      }
+      button.secondary {
+        background: #8b5cf6;
+      }
+      button.secondary:hover {
+        background: #7c3aed;
+      }
+      button.stop {
+        background: #dc2626;
+      }
+      button.stop:hover {
+        background: #b91c1c;
+      }
     </style>
   </head>
   <body>
@@ -61,8 +78,16 @@
       ).
     </p>
     <input id="apiKey" type="password" placeholder="ovy_..." />
-    <button id="save">Salvar</button>
+    <button id="save">Salvar chave</button>
     <div id="status"></div>
+    <hr />
+    <p>
+      O Chrome só libera a captura de áudio quando você clica aqui (ícone da
+      extensão) — um clique no botão flutuante da página sozinho não é
+      suficiente.
+    </p>
+    <button id="toggleCapture" class="secondary">Ativar legenda nesta aba</button>
+    <div id="captureStatus"></div>
     <script src="popup.js"></script>
   </body>
 </html>

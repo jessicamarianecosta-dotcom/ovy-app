@@ -15,12 +15,22 @@ segundos (reaproveita o mesmo motor de transcrição do app Ovy).
 
 ## Como usar
 
-1. Em qualquer site com áudio tocando (ex: uma videochamada, um vídeo),
-   clique no botão flutuante roxo/azul no canto inferior direito.
-2. O Chrome vai pedir para você escolher a aba cuja aba terá o áudio
-   compartilhado — confirme a própria aba atual.
-3. A legenda aparece acima do botão, acumulando o texto a cada ~8 segundos.
-4. Clique no "✕" do painel para fechar e parar a captura.
+**Importante:** o Chrome só libera a captura de áudio de uma aba quando você
+clica no **ícone da extensão na barra de ferramentas** (ou num atalho de
+teclado/menu de contexto da extensão) — um clique só no botão flutuante da
+própria página **não** conta como autorização para o Chrome, por segurança.
+Por isso, para *iniciar* a legenda:
+
+1. Clique no ícone do Ovy na barra de extensões.
+2. Clique em **"Ativar legenda nesta aba"** dentro do popup.
+3. O botão flutuante 🎙 na página fica roxo/ativo e a legenda aparece acima
+   dele, acumulando o texto a cada ~8 segundos.
+4. Para parar: clique de novo no botão flutuante, no "✕" do painel, ou volte
+   no popup e clique em "Parar legenda nesta aba".
+
+Se você clicar direto no botão flutuante sem nunca ter aberto o popup antes
+naquela aba, vai aparecer um aviso pedindo para usar o ícone da extensão —
+isso é uma limitação de segurança do próprio Chrome, não um bug.
 
 ## Limitações conhecidas (versão experimental)
 
@@ -30,5 +40,10 @@ segundos (reaproveita o mesmo motor de transcrição do app Ovy).
 - Pode não funcionar em sites que bloqueiam captura de aba por política
   própria, ou em chamadas de voz que usam áudio criptografado localmente
   de forma que o Chrome não consegue capturar via `tabCapture`.
+- **Contas gratuitas do Replicate (sem cartão cadastrado) têm um limite bem
+  baixo de requisições por minuto.** Se aparecer "Limite de requisições
+  atingido", adicione um método de pagamento em replicate.com/account/billing
+  para liberar o limite normal — a extensão já pausa e tenta de novo sozinha,
+  mas vai ficar lenta até isso ser resolvido.
 - A extensão não está publicada na Chrome Web Store; funciona só em modo
   desenvolvedor, carregada manualmente.

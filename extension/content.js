@@ -112,7 +112,11 @@
     addLine("Ativando captura de áudio da aba…");
     const response = await chrome.runtime.sendMessage({ type: "START_CAPTURE" });
     if (!response?.ok) {
-      addLine(response?.error || "Não foi possível iniciar a captura.", true);
+      addLine(
+        response?.error ||
+          "Não foi possível iniciar pelo botão da página. Clique no ícone do Ovy na barra de extensões e use “Ativar legenda nesta aba”.",
+        true
+      );
       active = false;
       fab.classList.remove("active");
       return;
@@ -124,6 +128,20 @@
 
   async function stop() {
     await chrome.runtime.sendMessage({ type: "STOP_CAPTURE" });
+    active = false;
+    fab.classList.remove("active");
+  }
+
+  // A captura também pode ter sido iniciada/parada pelo popup da extensão
+  // (clique no ícone da barra de ferramentas), não só pelo botão da página.
+  function syncStarted() {
+    panel.classList.add("visible");
+    linesEl.innerHTML = "";
+    active = true;
+    fab.classList.add("active");
+  }
+
+  function syncStopped() {
     active = false;
     fab.classList.remove("active");
   }
@@ -147,6 +165,12 @@
     }
     if (message.type === "OVY_ERROR") {
       addLine(message.error, true);
+    }
+    if (message.type === "OVY_CAPTURE_STARTED") {
+      syncStarted();
+    }
+    if (message.type === "OVY_CAPTURE_STOPPED") {
+      syncStopped();
     }
   });
 })();
