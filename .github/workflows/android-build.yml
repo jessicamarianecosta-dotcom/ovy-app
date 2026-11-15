@@ -8,6 +8,9 @@ on:
       - ".github/workflows/android-build.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,3 +33,18 @@ jobs:
           name: ovy-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 90
+
+      # Publica também como Release, com um link estável e fixo pra baixar
+      # direto do navegador do celular — sem precisar do Android Studio nem
+      # de passar pelo ambiente do Claude.
+      - name: Publish as GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest \
+            app/build/outputs/apk/debug/app-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Ovy Android (debug)" \
+            --notes "Build automático a partir do commit ${{ github.sha }}. Instale habilitando \"Instalar de fontes desconhecidas\" ao abrir o arquivo." \
+            --target "${{ github.sha }}"
