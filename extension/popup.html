@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        width: 280px;
+        font-family: -apple-system, system-ui, sans-serif;
+        margin: 0;
+        padding: 16px;
+        color: #111b36;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+      p {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0 0 12px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+      button {
+        width: 100%;
+        padding: 9px;
+        border: none;
+        border-radius: 999px;
+        background: #111b36;
+        color: white;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #8b5cf6;
+      }
+      a {
+        color: #8b5cf6;
+      }
+      #status {
+        margin-top: 10px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ovy — Legenda ao vivo</h1>
+    <p>
+      Cole sua chave de API (gere em
+      <a href="https://ovy-app.vercel.app/configuracoes" target="_blank" rel="noreferrer">
+        ovy-app.vercel.app/configuracoes
+      </a>
+      ).
+    </p>
+    <input id="apiKey" type="password" placeholder="ovy_..." />
+    <button id="save">Salvar</button>
+    <div id="status"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
