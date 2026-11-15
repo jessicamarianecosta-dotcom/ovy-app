@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Ovy" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ovy_navy</item>
+        <item name="colorPrimaryVariant">@color/ovy_navy</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/ovy_violet</item>
+        <item name="colorSecondaryVariant">@color/ovy_violet</item>
+    </style>
+</resources>
