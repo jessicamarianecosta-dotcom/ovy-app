@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -40,6 +40,18 @@ export const metadata: Metadata = {
       "Transforme áudios em textos organizados, editáveis e prontos para usar.",
     images: ["/brand/ovy-logo.png"],
   },
+  appleWebApp: {
+    capable: true,
+    title: "Ovy",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#111B36",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
