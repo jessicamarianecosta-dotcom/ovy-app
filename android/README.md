@@ -53,6 +53,16 @@ próprio sistema prioriza. Pode levar alguns compartilhamentos para o
 Android "aprender" a priorizar o Ovy nessa lista, dependendo do fabricante
 do aparelho.
 
+## Se o Ovy não aparecer na tela de compartilhar
+
+O WhatsApp costuma marcar o `.opus` das mensagens de voz com um tipo
+genérico (`application/octet-stream`), não `audio/*` de verdade — por isso
+o filtro de compartilhamento do app precisa aceitar os dois (já corrigido
+no manifest). **Depois de qualquer mudança no app, é preciso reinstalar**
+(Run de novo pelo Android Studio, ou gerar e instalar um novo `.apk`) para
+o Android reconhecer o novo filtro — só atualizar o código no GitHub não
+muda nada no celular até reinstalar.
+
 ## Limitações conhecidas
 
 - Funciona só com áudios já recebidos/baixados no aparelho (o que é o caso

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -73,8 +74,9 @@ class ShareActivity : AppCompatActivity() {
                     val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
                         ?: return@withContext ApiClient.TranscribeResult.Error("Não consegui ler o arquivo de áudio.")
                     val filename = queryFileName(uri) ?: "audio.ogg"
-                    val mimeType = contentResolver.getType(uri) ?: intent.type ?: "audio/ogg"
-                    ApiClient.transcribe(apiKey, bytes, filename, mimeType)
+                    val mimeType = resolveMimeType(uri, filename)
+                    val durationSeconds = readDurationSeconds(uri)
+                    ApiClient.transcribe(apiKey, bytes, filename, mimeType, durationSeconds)
                 } catch (e: Exception) {
                     ApiClient.TranscribeResult.Error("Erro ao ler o áudio: ${e.message}")
                 }
@@ -85,6 +87,51 @@ class ShareActivity : AppCompatActivity() {
                 is ApiClient.TranscribeResult.NeedsLogin -> showError(outcome.message)
                 is ApiClient.TranscribeResult.OutOfMinutes -> showError(outcome.message)
                 is ApiClient.TranscribeResult.Error -> showError(outcome.message)
+            }
+        }
+    }
+
+    /**
+     * O WhatsApp costuma compartilhar o .opus das mensagens de voz com um
+     * tipo genérico (application/octet-stream), que não ajuda o servidor a
+     * reconhecer o formato — então damos prioridade à extensão real do
+     * arquivo quando o tipo reportado não é um tipo de áudio específico.
+     */
+    private fun resolveMimeType(uri: Uri, filename: String): String {
+        val reported = contentResolver.getType(uri) ?: intent.type
+        if (reported != null && reported.startsWith("audio/")) return reported
+
+        return when (filename.substringAfterLast('.', "").lowercase()) {
+            "opus", "ogg" -> "audio/ogg"
+            "m4a", "mp4", "aac" -> "audio/mp4"
+            "mp3" -> "audio/mpeg"
+            "wav" -> "audio/wav"
+            "3gp", "3gpp" -> "audio/3gpp"
+            "amr" -> "audio/amr"
+            else -> reported ?: "audio/ogg"
+        }
+    }
+
+    /**
+     * O servidor tenta ler a duração do próprio arquivo, mas alguns .opus do
+     * WhatsApp não são reconhecidos por essa biblioteca — manda essa duração
+     * lida pelo próprio Android como reserva, senão a transcrição falha com
+     * "não foi possível determinar a duração".
+     */
+    private fun readDurationSeconds(uri: Uri): Int? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(this, uri)
+            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            durationMs?.toLongOrNull()?.let { ((it + 999) / 1000).toInt() }
+        } catch (e: Exception) {
+            null
+        } finally {
+            // release() existe desde a API 10; evitamos close() (só a partir
+            // da API 29) pra não quebrar em aparelhos mais antigos.
+            try {
+                retriever.release()
+            } catch (_: Exception) {
             }
         }
     }

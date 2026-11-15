@@ -28,13 +28,22 @@ object ApiClient {
         data class Error(val message: String) : TranscribeResult()
     }
 
-    fun transcribe(apiKey: String, bytes: ByteArray, filename: String, mimeType: String): TranscribeResult {
+    fun transcribe(
+        apiKey: String,
+        bytes: ByteArray,
+        filename: String,
+        mimeType: String,
+        clientDurationSeconds: Int? = null
+    ): TranscribeResult {
         return try {
             val mediaType = (mimeType.ifBlank { "audio/ogg" }).toMediaType()
-            val body = MultipartBody.Builder()
+            val bodyBuilder = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("audio", filename, bytes.toRequestBody(mediaType))
-                .build()
+            if (clientDurationSeconds != null && clientDurationSeconds > 0) {
+                bodyBuilder.addFormDataPart("clientDurationSeconds", clientDurationSeconds.toString())
+            }
+            val body = bodyBuilder.build()
 
             val request = Request.Builder()
                 .url("$BASE_URL/api/transcribe")

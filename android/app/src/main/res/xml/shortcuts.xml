@@ -7,6 +7,8 @@
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <share-target android:targetClass="com.ovy.app.ShareActivity">
         <data android:mimeType="audio/*" />
+        <data android:mimeType="application/ogg" />
+        <data android:mimeType="application/octet-stream" />
         <category android:name="com.ovy.app.category.TRANSCRIBE" />
     </share-target>
 

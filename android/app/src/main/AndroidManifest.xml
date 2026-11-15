@@ -26,6 +26,11 @@
         <!--
           Recebe o compartilhamento de um áudio (ex: WhatsApp → ⋮ → Compartilhar
           → Ovy) e manda transcrever sem precisar ouvir a mensagem.
+
+          O WhatsApp costuma marcar o arquivo .opus das mensagens de voz com
+          um tipo genérico (application/octet-stream), não "audio/*" de
+          verdade — por isso o filtro precisa aceitar os dois, senão o Ovy
+          não aparece na tela de compartilhar pra esse tipo de arquivo.
         -->
         <activity
             android:name=".ShareActivity"
@@ -36,6 +41,8 @@
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="audio/*" />
+                <data android:mimeType="application/ogg" />
+                <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>
 
