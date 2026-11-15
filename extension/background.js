@@ -77,7 +77,16 @@ async function handleStart(tabId) {
     throw error;
   }
 
-  await chrome.runtime.sendMessage({ type: "OFFSCREEN_START", streamId });
+  const offscreenResponse = await Promise.race([
+    chrome.runtime.sendMessage({ type: "OFFSCREEN_START", streamId }),
+    sleep(6000).then(() => null),
+  ]);
+  if (!offscreenResponse?.ok) {
+    activeTabId = null;
+    throw new Error(
+      offscreenResponse?.error || "O documento offscreen não respondeu a tempo. Tente de novo."
+    );
+  }
   chrome.tabs.sendMessage(tabId, { type: "OVY_CAPTURE_STARTED" }).catch(() => {});
 }
 

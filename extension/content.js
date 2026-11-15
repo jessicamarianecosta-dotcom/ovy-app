@@ -119,7 +119,11 @@
     panel.classList.add("visible");
     linesEl.innerHTML = "";
     addLine("Ativando captura de áudio da aba…");
-    const response = await chrome.runtime.sendMessage({ type: "START_CAPTURE" }).catch(() => null);
+    const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 8000));
+    const response = await Promise.race([
+      chrome.runtime.sendMessage({ type: "START_CAPTURE" }).catch(() => null),
+      timeout,
+    ]);
     if (!response?.ok) {
       addLine(
         response?.error ||
