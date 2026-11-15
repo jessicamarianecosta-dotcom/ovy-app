@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/current-user";
 import { resetCycleIfNeeded, remainingMinutes } from "@/lib/minutes";
-import { planMinutes } from "@/lib/billing-cycle";
+import { planMinutes, PRO_PLAN_MINUTES, PRO_PLAN_PRICE_BRL } from "@/lib/billing-cycle";
 import { UpgradeButton, ManageBillingButton } from "@/components/billing-buttons";
 
 export default async function PlanoPage() {
@@ -48,9 +48,9 @@ export default async function PlanoPage() {
 
       {user.plan === "free" && (
         <div className="mt-6 rounded-2xl border border-neutral-900 bg-neutral-900 p-6 text-white">
-          <p className="font-semibold">Plano Pro — R$ 17/mês</p>
+          <p className="font-semibold">Plano Pro — R$ {PRO_PLAN_PRICE_BRL}/mês</p>
           <p className="mt-1 text-sm text-neutral-300">
-            1.000 minutos por mês para transcrever sem se preocupar.
+            {PRO_PLAN_MINUTES} minutos por mês para transcrever sem se preocupar.
           </p>
           <div className="mt-4">
             <UpgradeButton />

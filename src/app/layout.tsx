@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -13,19 +13,40 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://ovy-app.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Ovy — Falou, transcreveu.",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: "Ovy — Sua voz em texto",
+    template: "%s | Ovy",
+  },
   description:
-    "Transforme seus áudios em textos organizados, editáveis e prontos para usar.",
+    "Ovy transforma áudios em textos organizados, editáveis e prontos para usar. Grave ou envie um áudio e receba a transcrição fiel ou organizada em poucos instantes.",
+  openGraph: {
+    title: "Ovy — Sua voz em texto",
+    description:
+      "Transforme áudios em textos organizados, editáveis e prontos para usar. Menos digitação, mais produtividade.",
+    url: APP_URL,
+    siteName: "Ovy",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ovy — Sua voz em texto",
+    description:
+      "Transforme áudios em textos organizados, editáveis e prontos para usar.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-neutral-50 text-neutral-900">
+      <body className="min-h-full flex flex-col bg-white text-neutral-900">
         {children}
         <Toaster richColors position="top-center" />
       </body>
