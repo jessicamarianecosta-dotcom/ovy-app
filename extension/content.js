@@ -27,18 +27,29 @@
       z-index: 2;
     }
     .ovy-btn:hover { background: #1b2a52; }
-    .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; }
+    .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; opacity: 0.85; }
     .ovy-btn.ovy-done { background: #16a34a; }
+    .ovy-btn img {
+      width: 16px;
+      height: 16px;
+      display: block;
+      pointer-events: none;
+    }
     .ovy-result {
-      margin-top: 6px;
+      display: block;
+      box-sizing: border-box;
+      width: 280px;
+      max-width: 90vw;
+      margin: 6px 0 0;
       padding: 8px 10px;
       border-radius: 10px;
       background: rgba(17,27,54,0.06);
       color: #111B36;
       font-size: 13px;
       line-height: 1.4;
-      max-width: 320px;
-      white-space: pre-wrap;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: break-word;
     }
     .ovy-result.ovy-error { color: #b91c1c; background: rgba(185,28,28,0.08); }
   `;
@@ -97,7 +108,7 @@
     // Dá tempo do WhatsApp decodificar e dispara um "pausar" assim que
     // conseguir, pra cortar o som o mais rápido possível.
     const start = Date.now();
-    while (Date.now() - start < 5000) {
+    while (Date.now() - start < 8000) {
       if (lastCapturedAt > before && lastCapturedBuffer) break;
       await new Promise((r) => setTimeout(r, 100));
     }
@@ -116,7 +127,6 @@
     }
 
     button.classList.add("ovy-loading");
-    button.textContent = "…";
     showResult(resultEl, "Transcrevendo…", false);
 
     try {
@@ -144,10 +154,8 @@
       showResult(resultEl, text || "(áudio sem fala reconhecível)", false);
       button.classList.remove("ovy-loading");
       button.classList.add("ovy-done");
-      button.textContent = "✓";
     } catch (error) {
       button.classList.remove("ovy-loading");
-      button.textContent = "📝";
       showResult(resultEl, error?.message || "Erro ao transcrever este áudio.", true);
     }
   }
@@ -171,7 +179,10 @@
     button.className = "ovy-btn";
     button.type = "button";
     button.title = "Transcrever com Ovy";
-    button.textContent = "📝";
+    const logo = document.createElement("img");
+    logo.src = chrome.runtime.getURL("icons/icon32.png");
+    logo.alt = "Ovy";
+    button.appendChild(logo);
 
     const resultEl = document.createElement("div");
     resultEl.className = "ovy-result";
@@ -185,7 +196,11 @@
 
     const anchor = playButton.closest("button") || playButton;
     anchor.insertAdjacentElement("afterend", button);
-    button.insertAdjacentElement("afterend", resultEl);
+
+    // O resultado vai no final do container da mensagem (bloco inteiro),
+    // não logo depois do botão — senão ele fica espremido na fileira
+    // estreita do player de áudio e o texto quebra palavra por palavra.
+    (container || anchor.parentElement || document.body).appendChild(resultEl);
   }
 
   function scan() {
