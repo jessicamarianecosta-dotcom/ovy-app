@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { signInWithGoogle, signInWithEmail } from "./actions";
 
@@ -11,8 +12,8 @@ export default async function EntrarPage({
     <div className="flex flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-8">
         <div className="text-center">
-          <Link href="/" className="text-lg font-semibold">
-            Ovy
+          <Link href="/" className="inline-flex items-center justify-center">
+            <Image src="/brand/ovy-logo.png" alt="Ovy" width={1181} height={1181} className="h-10 w-10" />
           </Link>
           <h1 className="mt-4 text-xl font-semibold">Entre na sua conta</h1>
           <p className="mt-1 text-sm text-neutral-500">

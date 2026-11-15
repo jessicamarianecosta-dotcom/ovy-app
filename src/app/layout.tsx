@@ -31,12 +31,14 @@ export const metadata: Metadata = {
     siteName: "Ovy",
     locale: "pt_BR",
     type: "website",
+    images: [{ url: "/brand/ovy-logo.png", width: 1181, height: 1181, alt: "Ovy" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Ovy — Sua voz em texto",
     description:
       "Transforme áudios em textos organizados, editáveis e prontos para usar.",
+    images: ["/brand/ovy-logo.png"],
   },
 };
 

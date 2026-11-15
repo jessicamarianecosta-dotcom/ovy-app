@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const COLUMNS = [
@@ -31,8 +32,14 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <Link href="/" className="text-lg font-semibold text-ovy-navy">
-              Ovy
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/brand/ovy-logo.png"
+                alt="Ovy"
+                width={1181}
+                height={1181}
+                className="h-9 w-9"
+              />
             </Link>
             <p className="mt-2 text-sm text-gray-500">Sua voz em texto.</p>
           </div>

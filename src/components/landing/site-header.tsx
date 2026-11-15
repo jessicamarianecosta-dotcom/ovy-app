@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const NAV_LINKS = [
@@ -10,8 +11,15 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-ovy-navy">
-          Ovy
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/brand/ovy-logo.png"
+            alt="Ovy"
+            width={1181}
+            height={1181}
+            className="h-10 w-10"
+            priority
+          />
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">

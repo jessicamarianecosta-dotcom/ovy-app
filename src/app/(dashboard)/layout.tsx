@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Mic, History, CreditCard, Settings, ShieldCheck, LogOut } from "lucide-react";
@@ -23,8 +24,8 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1">
       <aside className="hidden w-60 flex-col border-r border-neutral-200 bg-white p-4 sm:flex">
-        <Link href="/app" className="px-2 text-lg font-semibold">
-          Ovy
+        <Link href="/app" className="flex items-center px-2">
+          <Image src="/brand/ovy-logo.png" alt="Ovy" width={1181} height={1181} className="h-8 w-8" />
         </Link>
         <nav className="mt-8 flex flex-col gap-1">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
@@ -60,8 +61,8 @@ export default async function DashboardLayout({
 
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 sm:hidden">
-          <Link href="/app" className="font-semibold">
-            Ovy
+          <Link href="/app" className="flex items-center">
+            <Image src="/brand/ovy-logo.png" alt="Ovy" width={1181} height={1181} className="h-7 w-7" />
           </Link>
           <nav className="flex items-center gap-3 text-xs">
             {NAV_ITEMS.map(({ href, label }) => (
