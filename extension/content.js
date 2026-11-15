@@ -106,11 +106,20 @@
     panel.scrollTop = panel.scrollHeight;
   }
 
+  function isExtensionContextValid() {
+    return Boolean(chrome?.runtime?.id);
+  }
+
   async function start() {
+    if (!isExtensionContextValid()) {
+      panel.classList.add("visible");
+      addLine("A extensão foi atualizada. Recarregue esta página (F5) e tente de novo.", true);
+      return;
+    }
     panel.classList.add("visible");
     linesEl.innerHTML = "";
     addLine("Ativando captura de áudio da aba…");
-    const response = await chrome.runtime.sendMessage({ type: "START_CAPTURE" });
+    const response = await chrome.runtime.sendMessage({ type: "START_CAPTURE" }).catch(() => null);
     if (!response?.ok) {
       addLine(
         response?.error ||
@@ -127,7 +136,9 @@
   }
 
   async function stop() {
-    await chrome.runtime.sendMessage({ type: "STOP_CAPTURE" });
+    if (isExtensionContextValid()) {
+      await chrome.runtime.sendMessage({ type: "STOP_CAPTURE" }).catch(() => {});
+    }
     active = false;
     fab.classList.remove("active");
   }
@@ -159,7 +170,8 @@
     panel.classList.remove("visible");
   });
 
-  chrome.runtime.onMessage.addListener((message) => {
+  if (isExtensionContextValid()) {
+    chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "OVY_CAPTION") {
       addLine(message.text);
     }
@@ -172,5 +184,6 @@
     if (message.type === "OVY_CAPTURE_STOPPED") {
       syncStopped();
     }
-  });
+    });
+  }
 })();
