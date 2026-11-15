@@ -15,7 +15,7 @@ export default async function EntrarPage({
           <Link href="/" className="inline-flex items-center justify-center">
             <Image src="/brand/ovy-logo.png" alt="Ovy" width={1181} height={1181} className="h-10 w-10" />
           </Link>
-          <h1 className="mt-4 text-xl font-semibold">Entre na sua conta</h1>
+          <h1 className="mt-4 text-xl font-semibold text-ovy-navy">Entre na sua conta</h1>
           <p className="mt-1 text-sm text-neutral-500">
             Falou, transcreveu. Sem digitação.
           </p>
@@ -30,7 +30,7 @@ export default async function EntrarPage({
         >
           <button
             type="submit"
-            className="w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-50"
+            className="w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-50"
           >
             Continuar com Google
           </button>
@@ -49,7 +49,7 @@ export default async function EntrarPage({
             name="email"
             required
             placeholder="seu@email.com"
-            className="w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm outline-none focus:border-neutral-900"
+            className="w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 focus:border-neutral-900"
           />
           <button
             type="submit"
