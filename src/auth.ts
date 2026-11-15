@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY,
-      from: process.env.AUTH_EMAIL_FROM ?? "Ovy <login@ovyapp.com.br>",
+      from: process.env.AUTH_EMAIL_FROM ?? "Ovy <onboarding@resend.dev>",
     }),
   ],
   pages: {
