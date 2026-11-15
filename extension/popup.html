@@ -49,27 +49,10 @@
         margin-top: 10px;
         font-size: 12px;
       }
-      hr {
-        border: none;
-        border-top: 1px solid #e5e7eb;
-        margin: 14px 0;
-      }
-      button.secondary {
-        background: #8b5cf6;
-      }
-      button.secondary:hover {
-        background: #7c3aed;
-      }
-      button.stop {
-        background: #dc2626;
-      }
-      button.stop:hover {
-        background: #b91c1c;
-      }
     </style>
   </head>
   <body>
-    <h1>Ovy — Legenda ao vivo</h1>
+    <h1>Ovy — Transcrever WhatsApp Web</h1>
     <p>
       Cole sua chave de API (gere em
       <a href="https://ovy-app.vercel.app/configuracoes" target="_blank" rel="noreferrer">
@@ -80,14 +63,10 @@
     <input id="apiKey" type="password" placeholder="ovy_..." />
     <button id="save">Salvar chave</button>
     <div id="status"></div>
-    <hr />
     <p>
-      O Chrome só libera a captura de áudio quando você clica aqui (ícone da
-      extensão) — um clique no botão flutuante da página sozinho não é
-      suficiente.
+      Depois, abra <strong>web.whatsapp.com</strong> e clique no botão 📝 que
+      aparece ao lado de cada mensagem de áudio.
     </p>
-    <button id="toggleCapture" class="secondary">Ativar legenda nesta aba</button>
-    <div id="captureStatus"></div>
     <script src="popup.js"></script>
   </body>
 </html>

@@ -2,311 +2,183 @@
   if (window.__ovyInjected) return;
   window.__ovyInjected = true;
 
-  const host = document.createElement("div");
-  host.id = "ovy-extension-host";
-  host.style.cssText = "position:fixed;inset:auto;z-index:2147483647;";
-  document.documentElement.appendChild(host);
-  const shadow = host.attachShadow({ mode: "open" });
+  const API_BASE = "https://ovy-app.vercel.app";
+  const PROCESSED_ATTR = "data-ovy-processed";
 
   const style = document.createElement("style");
   style.textContent = `
-    .ovy-fab {
-      position: fixed;
-      width: 52px;
-      height: 52px;
-      border-radius: 999px;
-      background: #111B36;
-      color: white;
-      border: none;
-      cursor: grab;
-      display: flex;
+    .ovy-btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 30px rgba(17,27,54,0.35);
-      font-size: 22px;
-      font-family: system-ui, sans-serif;
-      touch-action: none;
-      user-select: none;
-    }
-    .ovy-fab.active {
-      background: #8B5CF6;
-    }
-    .ovy-fab.dragging {
-      cursor: grabbing;
-      opacity: 0.85;
-    }
-    .ovy-panel {
-      position: fixed;
-      width: 320px;
-      max-height: 260px;
-      overflow-y: auto;
-      background: rgba(17,27,54,0.92);
-      color: white;
-      border-radius: 16px;
-      padding: 14px 16px;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 13px;
-      line-height: 1.5;
-      display: none;
-      backdrop-filter: blur(4px);
-    }
-    .ovy-panel.visible {
-      display: block;
-    }
-    .ovy-panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #D8B4FE;
-    }
-    .ovy-panel-close {
-      background: none;
+      width: 26px;
+      height: 26px;
+      margin-left: 6px;
+      border-radius: 999px;
+      background: #111B36;
+      color: #fff;
       border: none;
-      color: white;
       cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
+      font-size: 13px;
+      vertical-align: middle;
+      flex-shrink: 0;
+      z-index: 2;
     }
-    .ovy-line {
-      margin-bottom: 6px;
+    .ovy-btn:hover { background: #1b2a52; }
+    .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; }
+    .ovy-btn.ovy-done { background: #16a34a; }
+    .ovy-result {
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(17,27,54,0.06);
+      color: #111B36;
+      font-size: 13px;
+      line-height: 1.4;
+      max-width: 320px;
+      white-space: pre-wrap;
     }
-    .ovy-error {
-      color: #fca5a5;
-    }
+    .ovy-result.ovy-error { color: #b91c1c; background: rgba(185,28,28,0.08); }
   `;
-  shadow.appendChild(style);
+  document.documentElement.appendChild(style);
 
-  const fab = document.createElement("button");
-  fab.className = "ovy-fab";
-  fab.title = "Ovy — legenda ao vivo";
-  fab.textContent = "🎙";
-  shadow.appendChild(fab);
-
-  const panel = document.createElement("div");
-  panel.className = "ovy-panel";
-  panel.innerHTML = `
-    <div class="ovy-panel-header">
-      <span>Ovy — legenda ao vivo</span>
-      <button class="ovy-panel-close" title="Fechar">✕</button>
-    </div>
-    <div class="ovy-lines"></div>
-  `;
-  shadow.appendChild(panel);
-
-  const linesEl = panel.querySelector(".ovy-lines");
-  const closeBtn = panel.querySelector(".ovy-panel-close");
-
-  let active = false;
-
-  const FAB_SIZE = 52;
-  const MARGIN = 12;
-  const DEFAULT_POS = { left: window.innerWidth - FAB_SIZE - 24, top: window.innerHeight - FAB_SIZE - 24 };
-
-  function clampPos(pos) {
-    const maxLeft = window.innerWidth - FAB_SIZE - MARGIN;
-    const maxTop = window.innerHeight - FAB_SIZE - MARGIN;
-    return {
-      left: Math.min(Math.max(pos.left, MARGIN), Math.max(MARGIN, maxLeft)),
-      top: Math.min(Math.max(pos.top, MARGIN), Math.max(MARGIN, maxTop)),
-    };
-  }
-
-  function applyPos(pos) {
-    fab.style.left = `${pos.left}px`;
-    fab.style.top = `${pos.top}px`;
-    positionPanel(pos);
-  }
-
-  function positionPanel(fabPos) {
-    // Mostra o painel acima do botão, ou abaixo se não couber.
-    const panelHeight = 260;
-    const spaceAbove = fabPos.top;
-    if (spaceAbove > panelHeight + 20) {
-      panel.style.top = "";
-      panel.style.bottom = `${window.innerHeight - fabPos.top + 12}px`;
-    } else {
-      panel.style.bottom = "";
-      panel.style.top = `${fabPos.top + FAB_SIZE + 12}px`;
-    }
-    const left = Math.min(Math.max(fabPos.left - 320 + FAB_SIZE, MARGIN), window.innerWidth - 320 - MARGIN);
-    panel.style.left = `${left}px`;
-  }
-
-  function savePos(pos) {
-    try {
-      chrome.storage?.local?.set?.({ ovyFabPos: pos });
-    } catch {
-      // contexto pode estar inválido; posição só não persiste desta vez.
-    }
-  }
-
-  let currentPos = DEFAULT_POS;
-  applyPos(currentPos);
-
-  if (isExtensionContextValid()) {
-    chrome.storage.local.get(["ovyFabPos"], (result) => {
-      if (result?.ovyFabPos) {
-        currentPos = clampPos(result.ovyFabPos);
-        applyPos(currentPos);
-      }
+  function getApiKey() {
+    return new Promise((resolve) => {
+      if (!isExtensionContextValid()) return resolve(null);
+      chrome.storage.local.get(["ovyApiKey"], (result) => resolve(result?.ovyApiKey || null));
     });
-  }
-
-  let dragState = null;
-
-  fab.addEventListener("pointerdown", (event) => {
-    dragState = {
-      startX: event.clientX,
-      startY: event.clientY,
-      origLeft: currentPos.left,
-      origTop: currentPos.top,
-      moved: false,
-    };
-    fab.setPointerCapture(event.pointerId);
-  });
-
-  fab.addEventListener("pointermove", (event) => {
-    if (!dragState) return;
-    const dx = event.clientX - dragState.startX;
-    const dy = event.clientY - dragState.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-      dragState.moved = true;
-      fab.classList.add("dragging");
-    }
-    if (dragState.moved) {
-      currentPos = clampPos({ left: dragState.origLeft + dx, top: dragState.origTop + dy });
-      applyPos(currentPos);
-    }
-  });
-
-  function endDrag(event) {
-    if (!dragState) return;
-    fab.releasePointerCapture?.(event.pointerId);
-    const wasDrag = dragState.moved;
-    fab.classList.remove("dragging");
-    dragState = null;
-    if (wasDrag) {
-      savePos(currentPos);
-    } else {
-      toggleCapture();
-    }
-  }
-
-  fab.addEventListener("pointerup", endDrag);
-  fab.addEventListener("pointercancel", endDrag);
-
-  window.addEventListener("resize", () => {
-    currentPos = clampPos(currentPos);
-    applyPos(currentPos);
-  });
-
-  function addLine(text, isError = false) {
-    const line = document.createElement("div");
-    line.className = isError ? "ovy-line ovy-error" : "ovy-line";
-    line.textContent = text;
-    linesEl.appendChild(line);
-    panel.scrollTop = panel.scrollHeight;
   }
 
   function isExtensionContextValid() {
     return Boolean(chrome?.runtime?.id);
   }
 
-  async function start() {
-    if (!isExtensionContextValid()) {
-      panel.classList.add("visible");
-      addLine("A extensão foi atualizada. Recarregue esta página (F5) e tente de novo.", true);
-      return;
+  // Acha o botão nativo de play do WhatsApp Web perto de um elemento <audio>.
+  // O WhatsApp só carrega/descriptografa o áudio (e só então preenche
+  // audio.src com um blob:) depois que o play é acionado — por isso
+  // simulamos um clique nele antes de conseguir ler o áudio.
+  function findPlayButton(audio) {
+    const container = audio.closest("[data-id]") || audio.parentElement?.closest("div") || audio.parentElement;
+    if (!container) return null;
+    return (
+      container.querySelector('button[aria-label*="ogar" i]') || // "Tocar"/"Play"
+      container.querySelector('span[data-icon*="audio-play" i]')?.closest("button") ||
+      container.querySelector('span[data-icon*="play" i]')?.closest("button") ||
+      container.querySelector("button")
+    );
+  }
+
+  async function waitForBlobSrc(audio, timeoutMs = 4000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (audio.src && audio.src.startsWith("blob:")) return true;
+      await new Promise((r) => setTimeout(r, 150));
     }
-    panel.classList.add("visible");
-    linesEl.innerHTML = "";
-    addLine("Ativando captura de áudio da aba…");
-    const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 8000));
-    let response = null;
+    return audio.src && audio.src.startsWith("blob:");
+  }
+
+  async function ensureAudioLoaded(audio) {
+    if (audio.src && audio.src.startsWith("blob:")) return true;
+
+    const playButton = findPlayButton(audio);
+    audio.muted = true;
+    if (playButton) playButton.click();
+
+    const loaded = await waitForBlobSrc(audio);
+
     try {
-      response = await Promise.race([
-        chrome.runtime.sendMessage({ type: "START_CAPTURE" }).catch(() => null),
-        timeout,
-      ]);
+      audio.pause();
     } catch {
-      response = null;
+      // já pausado ou nem chegou a tocar; tudo bem.
     }
-    if (!isExtensionContextValid()) {
-      addLine("A extensão foi atualizada. Recarregue esta página (F5) e tente de novo.", true);
-      active = false;
-      fab.classList.remove("active");
-      return;
-    }
-    if (!response?.ok) {
-      addLine(
-        response?.error ||
-          "Não foi possível iniciar pelo botão da página. Clique no ícone do Ovy na barra de extensões e use “Ativar legenda nesta aba”.",
-        true
-      );
-      active = false;
-      fab.classList.remove("active");
-      return;
-    }
-    linesEl.innerHTML = "";
-    active = true;
-    fab.classList.add("active");
+    audio.currentTime = 0;
+    audio.muted = false;
+
+    return loaded;
   }
 
-  async function stop() {
-    if (isExtensionContextValid()) {
-      try {
-        await chrome.runtime.sendMessage({ type: "STOP_CAPTURE" }).catch(() => {});
-      } catch {
-        // contexto invalidado durante a chamada; ignora.
+  async function transcribe(audio, button, resultEl) {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      showResult(resultEl, "Nenhuma chave de API configurada. Clique no ícone do Ovy na barra de extensões.", true);
+      return;
+    }
+
+    button.classList.add("ovy-loading");
+    button.textContent = "…";
+    showResult(resultEl, "Transcrevendo…", false);
+
+    try {
+      const loaded = await ensureAudioLoaded(audio);
+      if (!loaded) {
+        throw new Error("Não consegui carregar o áudio desta mensagem. Toque o play uma vez e tente de novo.");
       }
+
+      const audioBlob = await fetch(audio.src).then((r) => r.blob());
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "whatsapp-audio.ogg");
+
+      const response = await fetch(`${API_BASE}/api/transcribe`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || `Falha ao transcrever (HTTP ${response.status}).`);
+      }
+
+      const text = data.organizedText || data.faithfulText || "";
+      showResult(resultEl, text || "(áudio sem fala reconhecível)", false);
+      button.classList.remove("ovy-loading");
+      button.classList.add("ovy-done");
+      button.textContent = "✓";
+    } catch (error) {
+      button.classList.remove("ovy-loading");
+      button.textContent = "📝";
+      showResult(resultEl, error?.message || "Erro ao transcrever este áudio.", true);
     }
-    active = false;
-    fab.classList.remove("active");
   }
 
-  // A captura também pode ter sido iniciada/parada pelo popup da extensão
-  // (clique no ícone da barra de ferramentas), não só pelo botão da página.
-  function syncStarted() {
-    panel.classList.add("visible");
-    linesEl.innerHTML = "";
-    active = true;
-    fab.classList.add("active");
+  function showResult(resultEl, text, isError) {
+    resultEl.textContent = text;
+    resultEl.classList.toggle("ovy-error", Boolean(isError));
+    resultEl.style.display = "block";
   }
 
-  function syncStopped() {
-    active = false;
-    fab.classList.remove("active");
-  }
+  function attachButton(audio) {
+    if (audio.getAttribute(PROCESSED_ATTR)) return;
+    audio.setAttribute(PROCESSED_ATTR, "1");
 
-  function toggleCapture() {
-    if (active) {
-      stop();
-    } else {
-      start();
-    }
-  }
+    const button = document.createElement("button");
+    button.className = "ovy-btn";
+    button.type = "button";
+    button.title = "Transcrever com Ovy";
+    button.textContent = "📝";
 
-  closeBtn.addEventListener("click", () => {
-    stop();
-    panel.classList.remove("visible");
-  });
+    const resultEl = document.createElement("div");
+    resultEl.className = "ovy-result";
+    resultEl.style.display = "none";
 
-  if (isExtensionContextValid()) {
-    chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === "OVY_CAPTION") {
-      addLine(message.text);
-    }
-    if (message.type === "OVY_ERROR") {
-      addLine(message.error, true);
-    }
-    if (message.type === "OVY_CAPTURE_STARTED") {
-      syncStarted();
-    }
-    if (message.type === "OVY_CAPTURE_STOPPED") {
-      syncStopped();
-    }
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      transcribe(audio, button, resultEl);
     });
+
+    // Insere o botão logo depois do player de áudio, e o resultado logo
+    // abaixo da mensagem — sem mexer em mais nada do layout do WhatsApp.
+    audio.insertAdjacentElement("afterend", button);
+    button.insertAdjacentElement("afterend", resultEl);
   }
+
+  function scan() {
+    document.querySelectorAll("audio").forEach(attachButton);
+  }
+
+  scan();
+
+  const observer = new MutationObserver(() => scan());
+  observer.observe(document.body, { childList: true, subtree: true });
 })();
