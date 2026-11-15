@@ -12,6 +12,29 @@ export const maxDuration = 120;
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB, folga para áudio de até 4min
 
+// A extensão Chrome chama esse endpoint a partir de um content script (ou
+// seja, como se fosse a própria página do WhatsApp Web fazendo a chamada),
+// o que fica sujeito a CORS — sem esses cabeçalhos o navegador bloqueia a
+// resposta com "Failed to fetch". Como a autenticação aqui é por header
+// Authorization (não por cookie), liberar qualquer origem não abre brecha
+// de CSRF.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+};
+
+function json(data: unknown, init?: ResponseInit) {
+  return NextResponse.json(data, {
+    ...init,
+    headers: { ...CORS_HEADERS, ...(init?.headers || {}) },
+  });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(request: Request) {
   // Aceita tanto a sessão do app web quanto a chave de API pessoal, usada
   // pelo app Android (compartilhar áudio) e pela extensão Chrome.
@@ -20,17 +43,17 @@ export async function POST(request: Request) {
     try {
       user = await requireUser();
     } catch {
-      return NextResponse.json({ error: "Faça login para transcrever." }, { status: 401 });
+      return json({ error: "Faça login para transcrever." }, { status: 401 });
     }
   }
 
   const formData = await request.formData();
   const file = formData.get("audio");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Nenhum arquivo de áudio enviado." }, { status: 400 });
+    return json({ error: "Nenhum arquivo de áudio enviado." }, { status: 400 });
   }
   if (file.size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json({ error: "Arquivo muito grande (máx. 25MB)." }, { status: 413 });
+    return json({ error: "Arquivo muito grande (máx. 25MB)." }, { status: 413 });
   }
 
   const arrayBuffer = await file.arrayBuffer();
@@ -54,13 +77,13 @@ export async function POST(request: Request) {
   }
 
   if (!durationSeconds || durationSeconds <= 0) {
-    return NextResponse.json(
+    return json(
       { error: "Não foi possível determinar a duração do áudio." },
       { status: 400 }
     );
   }
   if (durationSeconds > MAX_TRANSCRIPTION_SECONDS) {
-    return NextResponse.json(
+    return json(
       { error: "O áudio excede o limite de 4 minutos por transcrição." },
       { status: 400 }
     );
@@ -69,7 +92,7 @@ export async function POST(request: Request) {
   user = await resetCycleIfNeeded(user);
   const neededMinutes = Math.ceil(durationSeconds / 60);
   if (remainingMinutes(user) < neededMinutes) {
-    return NextResponse.json(
+    return json(
       {
         error:
           "Seus minutos acabaram neste ciclo. Faça upgrade para o plano Pro ou compre um pacote extra.",
@@ -86,7 +109,7 @@ export async function POST(request: Request) {
     console.error("Erro na transcrição:", error);
     const transcriptionError = error as Error & { response?: { status?: number } };
     if (transcriptionError.response?.status === 402 || transcriptionError.response?.status === 429) {
-      return NextResponse.json(
+      return json(
         {
           error:
             "O motor de transcrição está indisponível no momento (limite ou crédito). Tente novamente em alguns minutos.",
@@ -94,7 +117,7 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
-    return NextResponse.json(
+    return json(
       { error: "Falha ao transcrever o áudio. Tente novamente." },
       { status: 502 }
     );
@@ -122,7 +145,7 @@ export async function POST(request: Request) {
 
   await consumeMinutes(user, neededMinutes, id);
 
-  return NextResponse.json({
+  return json({
     id,
     faithfulText,
     organizedText,
