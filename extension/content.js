@@ -181,6 +181,18 @@
     if (!isExtensionContextValid()) return; // extensão foi atualizada; essa instância antiga da página não deve mais agir.
     playButton.setAttribute(PROCESSED_ATTR, "1");
 
+    // Qualquer chamada a chrome.* aqui pode lançar de repente se a extensão
+    // for recarregada bem nesse instante (corrida rara) — isso é só ruído,
+    // não quebra nada de verdade, então evitamos deixar isso virar um erro
+    // não tratado na página.
+    try {
+      attachButtonUnsafe(playButton);
+    } catch {
+      // próxima varredura tenta de novo quando a página for recarregada.
+    }
+  }
+
+  function attachButtonUnsafe(playButton) {
     // O container da mensagem é onde procuramos o botão de "pausar"
     // depois, e onde penduramos o resultado da transcrição.
     const container =
