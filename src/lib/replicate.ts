@@ -4,9 +4,11 @@ import Replicate from "replicate";
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
 // vaibhavs10/incredibly-fast-whisper: GPU-segundo, escala a zero, custo muito baixo por minuto de áudio.
-// Sem hash de versão fixado: usa sempre a última versão publicada do modelo
-// (um hash fixo errado ou desatualizado causa erro 422 "Invalid version").
-const WHISPER_MODEL = "vaibhavs10/incredibly-fast-whisper";
+// Esse modelo (comunitário, não "oficial") não aceita chamada sem versão —
+// o endpoint /v1/models/{owner}/{name}/predictions responde 404 pra ele.
+// Versão confirmada como válida na documentação do próprio modelo.
+const WHISPER_MODEL =
+  "vaibhavs10/incredibly-fast-whisper:37dfc0d6a7eb43ff84e230f74a24dab84e6bb7756c9b457dbdcceca3de7a4a04";
 
 export async function transcribeAudio(audioBuffer: Buffer, mimeType: string) {
   const extension = mimeType.split("/")[1]?.split(";")[0] || "webm";
