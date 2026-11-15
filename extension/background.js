@@ -60,6 +60,11 @@ async function handleStart(tabId) {
     throw new Error("Nenhuma chave de API configurada. Clique no ícone da extensão.");
   }
 
+  // Força a limpeza de qualquer captura "fantasma" deixada por uma tentativa
+  // anterior (ex: service worker reiniciado no meio do processo) — sem isso
+  // o Chrome recusa com "Cannot capture a tab with an active stream".
+  await forceReleaseAnyCapture();
+
   chunkQueue = [];
   activeTabId = tabId;
   await ensureOffscreenDocument();
@@ -91,12 +96,32 @@ async function handleStart(tabId) {
 }
 
 async function handleStop() {
-  await chrome.runtime.sendMessage({ type: "OFFSCREEN_STOP" }).catch(() => {});
+  await forceReleaseAnyCapture();
   if (activeTabId) {
     chrome.tabs.sendMessage(activeTabId, { type: "OVY_CAPTURE_STOPPED" }).catch(() => {});
   }
   activeTabId = null;
   chunkQueue = [];
+}
+
+async function forceReleaseAnyCapture() {
+  // Avisa o offscreen pra soltar a stream, se ele existir e estiver vivo...
+  try {
+    await Promise.race([
+      chrome.runtime.sendMessage({ type: "OFFSCREEN_STOP" }),
+      sleep(1500),
+    ]);
+  } catch {
+    // sem documento offscreen pra responder, tudo bem.
+  }
+  // ...e destrói o documento offscreen por completo: é a única forma garantida
+  // de encerrar qualquer MediaStream que tenha ficado preso nele.
+  try {
+    await chrome.offscreen.closeDocument();
+  } catch {
+    // já não existia nenhum documento offscreen.
+  }
+  offscreenReady = null;
 }
 
 async function processQueue() {
