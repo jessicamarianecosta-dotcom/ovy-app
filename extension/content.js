@@ -12,29 +12,31 @@
   style.textContent = `
     .ovy-fab {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
       width: 52px;
       height: 52px;
       border-radius: 999px;
       background: #111B36;
       color: white;
       border: none;
-      cursor: pointer;
+      cursor: grab;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 10px 30px rgba(17,27,54,0.35);
       font-size: 22px;
       font-family: system-ui, sans-serif;
+      touch-action: none;
+      user-select: none;
     }
     .ovy-fab.active {
       background: #8B5CF6;
     }
+    .ovy-fab.dragging {
+      cursor: grabbing;
+      opacity: 0.85;
+    }
     .ovy-panel {
       position: fixed;
-      bottom: 88px;
-      right: 24px;
       width: 320px;
       max-height: 260px;
       overflow-y: auto;
@@ -97,6 +99,108 @@
   const closeBtn = panel.querySelector(".ovy-panel-close");
 
   let active = false;
+
+  const FAB_SIZE = 52;
+  const MARGIN = 12;
+  const DEFAULT_POS = { left: window.innerWidth - FAB_SIZE - 24, top: window.innerHeight - FAB_SIZE - 24 };
+
+  function clampPos(pos) {
+    const maxLeft = window.innerWidth - FAB_SIZE - MARGIN;
+    const maxTop = window.innerHeight - FAB_SIZE - MARGIN;
+    return {
+      left: Math.min(Math.max(pos.left, MARGIN), Math.max(MARGIN, maxLeft)),
+      top: Math.min(Math.max(pos.top, MARGIN), Math.max(MARGIN, maxTop)),
+    };
+  }
+
+  function applyPos(pos) {
+    fab.style.left = `${pos.left}px`;
+    fab.style.top = `${pos.top}px`;
+    positionPanel(pos);
+  }
+
+  function positionPanel(fabPos) {
+    // Mostra o painel acima do botão, ou abaixo se não couber.
+    const panelHeight = 260;
+    const spaceAbove = fabPos.top;
+    if (spaceAbove > panelHeight + 20) {
+      panel.style.top = "";
+      panel.style.bottom = `${window.innerHeight - fabPos.top + 12}px`;
+    } else {
+      panel.style.bottom = "";
+      panel.style.top = `${fabPos.top + FAB_SIZE + 12}px`;
+    }
+    const left = Math.min(Math.max(fabPos.left - 320 + FAB_SIZE, MARGIN), window.innerWidth - 320 - MARGIN);
+    panel.style.left = `${left}px`;
+  }
+
+  function savePos(pos) {
+    try {
+      chrome.storage?.local?.set?.({ ovyFabPos: pos });
+    } catch {
+      // contexto pode estar inválido; posição só não persiste desta vez.
+    }
+  }
+
+  let currentPos = DEFAULT_POS;
+  applyPos(currentPos);
+
+  if (isExtensionContextValid()) {
+    chrome.storage.local.get(["ovyFabPos"], (result) => {
+      if (result?.ovyFabPos) {
+        currentPos = clampPos(result.ovyFabPos);
+        applyPos(currentPos);
+      }
+    });
+  }
+
+  let dragState = null;
+
+  fab.addEventListener("pointerdown", (event) => {
+    dragState = {
+      startX: event.clientX,
+      startY: event.clientY,
+      origLeft: currentPos.left,
+      origTop: currentPos.top,
+      moved: false,
+    };
+    fab.setPointerCapture(event.pointerId);
+  });
+
+  fab.addEventListener("pointermove", (event) => {
+    if (!dragState) return;
+    const dx = event.clientX - dragState.startX;
+    const dy = event.clientY - dragState.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      dragState.moved = true;
+      fab.classList.add("dragging");
+    }
+    if (dragState.moved) {
+      currentPos = clampPos({ left: dragState.origLeft + dx, top: dragState.origTop + dy });
+      applyPos(currentPos);
+    }
+  });
+
+  function endDrag(event) {
+    if (!dragState) return;
+    fab.releasePointerCapture?.(event.pointerId);
+    const wasDrag = dragState.moved;
+    fab.classList.remove("dragging");
+    dragState = null;
+    if (wasDrag) {
+      savePos(currentPos);
+    } else {
+      toggleCapture();
+    }
+  }
+
+  fab.addEventListener("pointerup", endDrag);
+  fab.addEventListener("pointercancel", endDrag);
+
+  window.addEventListener("resize", () => {
+    currentPos = clampPos(currentPos);
+    applyPos(currentPos);
+  });
 
   function addLine(text, isError = false) {
     const line = document.createElement("div");
@@ -176,13 +280,13 @@
     fab.classList.remove("active");
   }
 
-  fab.addEventListener("click", () => {
+  function toggleCapture() {
     if (active) {
       stop();
     } else {
       start();
     }
-  });
+  }
 
   closeBtn.addEventListener("click", () => {
     stop();
