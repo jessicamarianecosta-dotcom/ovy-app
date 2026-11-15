@@ -1,59 +1,55 @@
-# Ovy — app Android (botão flutuante, versão experimental)
+# Ovy — app Android (compartilhar áudio do WhatsApp, sem precisar ouvir)
 
-App nativo Kotlin: mantém um botão flutuante arrastável sobre qualquer outro
-app (tela de outros apps, não só dentro do Ovy), grava o microfone em blocos
-de ~8 segundos e envia cada bloco para o mesmo endpoint de transcrição já
-usado pela extensão Chrome (`/api/extension/transcribe-chunk`), reaproveitando
-a mesma chave de API pessoal.
+App nativo Kotlin bem pequeno: você recebe um áudio no WhatsApp,
+compartilha ele com o app "Ovy" (como se fosse encaminhar para um contato) e
+o Ovy devolve o texto transcrito — sem você precisar tocar/ouvir o áudio.
 
-## Diferença importante em relação à extensão Chrome
+Por trás, ele chama o mesmo endpoint de transcrição completa do site
+(`/api/transcribe`), que agora também aceita a chave de API pessoal (a
+mesma usada pela extensão Chrome), além do login por sessão do navegador. A
+transcrição é salva no seu histórico normalmente, consumindo os minutos do
+seu plano como qualquer outra transcrição.
 
-A extensão captura o **áudio da aba** (`tabCapture`). No Android isso não é
-possível para qualquer app de forma geral sem ser o próprio app em primeiro
-plano — por isso esta versão usa o **microfone do aparelho**, como um
-assistente de legendagem ao vivo do ambiente (reuniões, vídeos tocando no
-alto-falante, conversas), e não uma captura silenciosa do áudio interno de
-outros apps.
+## Antes de tudo: você talvez nem precise deste app
+
+O próprio WhatsApp tem transcrição de mensagens de voz nativa e gratuita:
+**Configurações → Conversas → Transcrições de mensagens de voz** (disponível
+em português). Se isso já resolver seu caso, não precisa instalar nada.
+
+Este app Ovy faz sentido quando você quer o texto **organizado pelo Ovy**
+(removendo vícios de fala, pontuação corrigida) e **salvo no seu histórico**
+junto com as outras transcrições.
 
 ## Como abrir e rodar
 
-1. Abra a pasta `android/` no **Android Studio** (não é um projeto Next.js —
-   é um projeto Gradle/Kotlin separado, dentro do mesmo repositório).
-2. Deixe o Android Studio sincronizar o Gradle (primeira vez pode baixar o
-   Android SDK/Build Tools automaticamente).
-3. Conecte um celular Android (modo desenvolvedor + depuração USB) ou use um
-   emulador, e clique em "Run".
-4. No app:
-   - Cole a chave de API gerada em `ovy-app.vercel.app/configuracoes` →
-     "Chave de API" → "Gerar chave", e toque em "Salvar chave".
-   - Toque em "Permitir 'Exibir sobre outros apps'" e autorize na tela do
-     sistema.
-   - Toque em "Permitir microfone" e autorize.
-   - Toque em "Ativar botão flutuante". O botão 🎙 aparece na tela — você
-     pode sair do app Ovy e abrir qualquer outro app, o botão continua.
-5. Toque no botão para iniciar a legenda (fica roxo/ativo e um painel some
-   acima ou abaixo dele com o texto); toque de novo, ou no "✕" do painel,
-   para parar. Arraste o botão (sem soltar rápido) para mudar de lugar na
-   tela — a posição não é salva entre reinicializações do serviço nesta
-   versão inicial.
+1. Abra a pasta `android/` no **Android Studio** (projeto Gradle/Kotlin
+   separado do Next.js, dentro do mesmo repositório).
+2. Deixe o Gradle sincronizar (primeira vez pode baixar SDK/Build Tools).
+3. Conecte um celular Android (depuração USB) ou use um emulador e clique
+   em "Run".
+4. No app, cole a chave de API gerada em
+   `ovy-app.vercel.app/configuracoes` → "Chave de API" → "Gerar chave", e
+   toque em "Salvar chave" (só precisa fazer isso uma vez).
 
-## Limitações conhecidas (versão experimental, igual à extensão)
+## Como usar
 
-- Usa o **microfone**, não o áudio interno de outros apps — funciona bem
-  para legendar o que está sendo falado perto do aparelho ou tocando no
-  alto-falante, mas não "ouve por dentro" de um app de chamada, por exemplo.
-- Sem controle de minutos/plano aplicado ainda (mesma limitação da
-  extensão) — é um protótipo para validar a ideia.
-- Contas gratuitas do Replicate (sem cartão) têm limite baixo de requisições
-  por minuto; o app já pausa e tenta de novo sozinho quando recebe esse erro,
-  mas fica mais lento até um método de pagamento ser cadastrado em
-  replicate.com/account/billing.
-- Não publicado na Play Store — só roda instalado manualmente via Android
-  Studio (`Run` em um aparelho, ou gerando um APK em
-  `Build > Build Bundle(s) / APK(s) > Build APK(s)`).
-- A posição do botão flutuante não é persistida entre reinícios do serviço.
-- Em alguns aparelhos/fabricantes, economia de bateria agressiva pode matar
-  o serviço em segundo plano; se isso acontecer, é preciso liberar o app nas
-  configurações de bateria do sistema (varia por fabricante).
-- Não existe versão para iPhone/iOS: a Apple não permite esse tipo de
-  sobreposição por cima de outros apps.
+1. No WhatsApp, mantenha pressionado um áudio recebido (mobile; WhatsApp
+   Web/Desktop não tem essa opção de compartilhar nativamente — nesse caso
+   baixe o áudio e suba manualmente em ovy-app.vercel.app).
+2. Toque em compartilhar/encaminhar (ícone de seta ou "⋮" → "Compartilhar")
+   e escolha **Ovy** na lista de apps.
+3. Uma tela simples abre, mostra "Transcrevendo o áudio…" e, quando
+   terminar, o texto já organizado — com botões para copiar ou abrir a
+   transcrição completa no site.
+
+## Limitações conhecidas
+
+- Funciona só com áudios já recebidos/baixados no aparelho (o que é o caso
+  normal de mensagens de voz do WhatsApp) — não com áudio tocando ao vivo.
+- Mesmo limite de 4 minutos por áudio e de minutos do seu plano que vale
+  para qualquer transcrição no Ovy.
+- Não publicado na Play Store — instale manualmente via Android Studio
+  (`Run` em um aparelho, ou `Build > Build Bundle(s) / APK(s) > Build
+  APK(s)` para gerar um `.apk` e instalar sem fio).
+- Sem versão para iPhone/iOS por ora (o compartilhamento nativo do iOS
+  também permitiria algo parecido, mas ainda não foi construído).

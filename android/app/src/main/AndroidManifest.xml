@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -24,10 +19,21 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".OverlayService"
-            android:foregroundServiceType="microphone"
-            android:exported="false" />
+        <!--
+          Recebe o compartilhamento de um áudio (ex: WhatsApp → ⋮ → Compartilhar
+          → Ovy) e manda transcrever sem precisar ouvir a mensagem.
+        -->
+        <activity
+            android:name=".ShareActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Ovy"
+            android:label="Transcrever com Ovy">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+        </activity>
 
     </application>
 </manifest>

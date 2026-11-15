@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseBuffer } from "music-metadata";
 import { requireUser } from "@/lib/current-user";
+import { getUserByApiKey } from "@/lib/api-key-auth";
 import { remainingMinutes, resetCycleIfNeeded, consumeMinutes } from "@/lib/minutes";
 import { transcribeAudio, organizeTranscript } from "@/lib/replicate";
 import { db } from "@/db";
@@ -12,11 +13,15 @@ export const maxDuration = 120;
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB, folga para áudio de até 4min
 
 export async function POST(request: Request) {
-  let user;
-  try {
-    user = await requireUser();
-  } catch {
-    return NextResponse.json({ error: "Faça login para transcrever." }, { status: 401 });
+  // Aceita tanto a sessão do app web quanto a chave de API pessoal, usada
+  // pelo app Android (compartilhar áudio) e pela extensão Chrome.
+  let user = await getUserByApiKey(request);
+  if (!user) {
+    try {
+      user = await requireUser();
+    } catch {
+      return NextResponse.json({ error: "Faça login para transcrever." }, { status: 401 });
+    }
   }
 
   const formData = await request.formData();

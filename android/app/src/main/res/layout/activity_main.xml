@@ -14,7 +14,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ovy — legenda flutuante"
+            android:text="Ovy — transcrever sem ouvir"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="@color/ovy_navy"
@@ -35,49 +35,21 @@
             android:text="Salvar chave" />
 
         <TextView
-            android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:textColor="@color/ovy_navy" />
-
-        <Button
-            android:id="@+id/overlayPermissionButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Permitir &quot;Exibir sobre outros apps&quot;" />
-
-        <Button
-            android:id="@+id/micPermissionButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Permitir microfone" />
-
-        <Button
-            android:id="@+id/toggleButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="@color/ovy_navy"
-            android:textColor="@color/white"
-            android:text="Ativar botão flutuante" />
-
-        <Button
-            android:id="@+id/stopButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Desativar botão flutuante" />
+            android:layout_marginTop="32dp"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/ovy_navy"
+            android:text="Como usar no WhatsApp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:textSize="12sp"
-            android:textColor="#6B7280"
-            android:text="Depois de ativar, você pode sair deste app e abrir qualquer outro — o botão continua na tela. Toque nele para iniciar/parar a legenda." />
+            android:layout_marginTop="8dp"
+            android:textSize="14sp"
+            android:textColor="@color/ovy_navy"
+            android:text="1. Cole e salve sua chave de API acima (só precisa fazer isso uma vez).\n2. No WhatsApp, mantenha pressionado um áudio recebido.\n3. Toque em compartilhar/encaminhar e escolha &quot;Ovy&quot;.\n4. O texto transcrito aparece na tela, sem você precisar tocar o áudio." />
 
     </LinearLayout>
 </ScrollView>

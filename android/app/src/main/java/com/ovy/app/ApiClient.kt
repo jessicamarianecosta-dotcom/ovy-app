@@ -4,42 +4,40 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
- * Mesmo endpoint usado pela extensão Chrome (reaproveita o motor de
- * transcrição e a autenticação por chave de API já existentes no app web).
+ * Mesmo endpoint usado pela página principal do Ovy (/api/transcribe), que
+ * agora também aceita autenticação por chave de API pessoal — a mesma usada
+ * pela extensão Chrome.
  */
 object ApiClient {
     private const val BASE_URL = "https://ovy-app.vercel.app"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
         .build()
 
-    sealed class ChunkResult {
-        data class Success(val text: String) : ChunkResult()
-        data class RateLimited(val retryAfterSeconds: Int, val message: String) : ChunkResult()
-        data class Error(val message: String) : ChunkResult()
+    sealed class TranscribeResult {
+        data class Success(val id: String, val organizedText: String, val faithfulText: String) : TranscribeResult()
+        data class NeedsLogin(val message: String) : TranscribeResult()
+        data class OutOfMinutes(val message: String) : TranscribeResult()
+        data class Error(val message: String) : TranscribeResult()
     }
 
-    fun transcribeChunk(apiKey: String, file: File): ChunkResult {
+    fun transcribe(apiKey: String, bytes: ByteArray, filename: String, mimeType: String): TranscribeResult {
         return try {
+            val mediaType = (mimeType.ifBlank { "audio/ogg" }).toMediaType()
             val body = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart(
-                    "audio",
-                    file.name,
-                    file.asRequestBody("audio/mp4".toMediaType())
-                )
+                .addFormDataPart("audio", filename, bytes.toRequestBody(mediaType))
                 .build()
 
             val request = Request.Builder()
-                .url("$BASE_URL/api/extension/transcribe-chunk")
+                .url("$BASE_URL/api/transcribe")
                 .addHeader("Authorization", "Bearer $apiKey")
                 .post(body)
                 .build()
@@ -53,20 +51,21 @@ object ApiClient {
                 }
 
                 when {
-                    response.code == 429 -> {
-                        val retryAfter = json.optInt("retryAfter", 5)
-                        ChunkResult.RateLimited(
-                            retryAfter,
-                            json.optString("error", "Limite de requisições atingido.")
-                        )
-                    }
+                    response.code == 401 ->
+                        TranscribeResult.NeedsLogin(json.optString("error", "Chave de API inválida ou não configurada."))
+                    response.code == 402 ->
+                        TranscribeResult.OutOfMinutes(json.optString("error", "Seus minutos acabaram neste ciclo."))
                     !response.isSuccessful ->
-                        ChunkResult.Error(json.optString("error", "Falha ao transcrever (HTTP ${response.code})."))
-                    else -> ChunkResult.Success(json.optString("text", ""))
+                        TranscribeResult.Error(json.optString("error", "Falha ao transcrever (HTTP ${response.code})."))
+                    else -> TranscribeResult.Success(
+                        json.optString("id", ""),
+                        json.optString("organizedText", ""),
+                        json.optString("faithfulText", "")
+                    )
                 }
             }
         } catch (e: Exception) {
-            ChunkResult.Error("Erro de rede: ${e.message}")
+            TranscribeResult.Error("Erro de rede: ${e.message}")
         }
     }
 }
