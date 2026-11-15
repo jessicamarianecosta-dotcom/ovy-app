@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/current-user";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -9,6 +9,7 @@ export async function POST() {
   const user = await requireUser().catch(() => null);
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
+  const stripe = getStripe();
   let customerId = user.stripeCustomerId;
   if (!customerId) {
     const customer = await stripe.customers.create({
