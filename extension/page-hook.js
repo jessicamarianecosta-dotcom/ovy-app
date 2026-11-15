@@ -5,31 +5,39 @@
 // deles é customizado, sem tag <audio>, então não tem outro jeito de
 // pegar o arquivo original).
 (() => {
-  function patch(Ctor) {
+  function emit(buffer, source) {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("__ovyAudioBuffer", { detail: { buffer, source, size: buffer?.byteLength || 0 } })
+      );
+    } catch {
+      // ignora falha isolada de um hook; os outros continuam valendo.
+    }
+  }
+
+  function patchDecode(Ctor, source) {
     if (!Ctor || !Ctor.prototype || !Ctor.prototype.decodeAudioData || Ctor.prototype.__ovyPatched) return;
     const originalDecode = Ctor.prototype.decodeAudioData;
     Ctor.prototype.decodeAudioData = function (arrayBuffer, ...rest) {
       try {
-        const clone = arrayBuffer.slice(0);
-        window.dispatchEvent(new CustomEvent("__ovyAudioBuffer", { detail: { buffer: clone } }));
+        emit(arrayBuffer.slice(0), source);
       } catch {
-        // se não der pra clonar, só segue o jogo sem capturar nada.
+        // segue o jogo mesmo sem clonar.
       }
       return originalDecode.call(this, arrayBuffer, ...rest);
     };
     Ctor.prototype.__ovyPatched = true;
   }
 
-  // Cobre tanto AudioContext (tocar ao vivo) quanto OfflineAudioContext
-  // (usado às vezes só pra desenhar a forma de onda, sem tocar de verdade).
-  patch(window.AudioContext);
-  patch(window.webkitAudioContext);
-  patch(window.OfflineAudioContext);
-  patch(window.webkitOfflineAudioContext);
+  // 1) AudioContext/OfflineAudioContext: cobre quando o áudio é decodificado
+  // nativamente pelo navegador (ao vivo ou só pra desenhar a forma de onda).
+  patchDecode(window.AudioContext, "audiocontext");
+  patchDecode(window.webkitAudioContext, "audiocontext");
+  patchDecode(window.OfflineAudioContext, "offlineaudiocontext");
+  patchDecode(window.webkitOfflineAudioContext, "offlineaudiocontext");
 
-  // fetch() também é um jeito comum de baixar o áudio antes de decodificar
-  // — guardamos a última resposta de áudio buscada pela própria página
-  // como plano B, caso o app não use decodeAudioData pra tocar.
+  // 2) fetch(): caso o app baixe o arquivo já descriptografado/pronto via
+  // uma resposta HTTP marcada como áudio.
   const originalFetch = window.fetch;
   window.fetch = function (...args) {
     const result = originalFetch.apply(this, args);
@@ -40,13 +48,23 @@
           response
             .clone()
             .arrayBuffer()
-            .then((buffer) => {
-              window.dispatchEvent(new CustomEvent("__ovyAudioBuffer", { detail: { buffer } }));
-            })
+            .then((buffer) => emit(buffer, "fetch"))
             .catch(() => {});
         }
       })
       .catch(() => {});
     return result;
   };
+
+  // 3) crypto.subtle.decrypt(): o WhatsApp usa criptografia ponta a ponta,
+  // então a mídia chega criptografada e só vira bytes de verdade depois
+  // dessa chamada — é provavelmente o ponto mais confiável de captura.
+  if (window.crypto?.subtle?.decrypt) {
+    const originalDecrypt = window.crypto.subtle.decrypt.bind(window.crypto.subtle);
+    window.crypto.subtle.decrypt = function (...args) {
+      const resultPromise = originalDecrypt(...args);
+      resultPromise.then((buffer) => emit(buffer, "decrypt")).catch(() => {});
+      return resultPromise;
+    };
+  }
 })();

@@ -56,13 +56,18 @@
   document.documentElement.appendChild(style);
 
   // O hook em page-hook.js (mundo principal da página) avisa aqui, no
-  // mundo isolado da extensão, toda vez que o WhatsApp decodifica um áudio
-  // pra tocar — guardamos o bloco mais recente pra associar ao clique.
-  let lastCapturedBuffer = null;
-  let lastCapturedAt = 0;
+  // mundo isolado da extensão, toda vez que algum buffer "candidato" a
+  // áudio passa por decodeAudioData, fetch ou crypto.subtle.decrypt. O
+  // WhatsApp decripta um monte de coisa pequena o tempo todo (texto,
+  // metadados), então guardamos os últimos candidatos com tamanho e hora,
+  // e escolhemos o maior que apareceu depois do clique no play.
+  const MIN_AUDIO_BYTES = 2000;
+  const capturedBuffers = [];
   window.addEventListener("__ovyAudioBuffer", (event) => {
-    lastCapturedBuffer = event.detail?.buffer || null;
-    lastCapturedAt = Date.now();
+    const { buffer, source, size } = event.detail || {};
+    if (!buffer || size < MIN_AUDIO_BYTES) return;
+    capturedBuffers.push({ buffer, source, size, timestamp: Date.now() });
+    if (capturedBuffers.length > 25) capturedBuffers.shift();
   });
 
   function getApiKey() {
@@ -100,23 +105,28 @@
   }
 
   async function captureAudioBuffer(playButton, container) {
-    lastCapturedBuffer = null;
-    const before = lastCapturedAt;
+    const clickTime = Date.now();
 
     clickElement(playButton);
 
-    // Dá tempo do WhatsApp decodificar e dispara um "pausar" assim que
-    // conseguir, pra cortar o som o mais rápido possível.
+    // Dá tempo do WhatsApp decodificar/descriptografar e dispara um
+    // "pausar" assim que achar um candidato razoável, pra cortar o som o
+    // mais rápido possível.
     const start = Date.now();
+    let best = null;
     while (Date.now() - start < 8000) {
-      if (lastCapturedAt > before && lastCapturedBuffer) break;
-      await new Promise((r) => setTimeout(r, 100));
+      const candidates = capturedBuffers.filter((c) => c.timestamp >= clickTime - 200);
+      if (candidates.length > 0) {
+        best = candidates.reduce((a, b) => (b.size > a.size ? b : a));
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 150));
     }
 
     const pauseButton = findPauseElement(container) || findPauseElement(document);
     clickElement(pauseButton);
 
-    return lastCapturedBuffer;
+    return best?.buffer || null;
   }
 
   async function transcribe(playButton, container, button, resultEl) {
