@@ -84,6 +84,16 @@ export async function POST(request: Request) {
     faithfulText = await transcribeAudio(buffer, file.type || "audio/mpeg");
   } catch (error) {
     console.error("Erro na transcrição:", error);
+    const replicateError = error as Error & { response?: { status?: number } };
+    if (replicateError.response?.status === 402) {
+      return NextResponse.json(
+        {
+          error:
+            "O motor de transcrição está sem crédito no momento. Tente novamente em alguns minutos.",
+        },
+        { status: 502 }
+      );
+    }
     return NextResponse.json(
       { error: "Falha ao transcrever o áudio. Tente novamente." },
       { status: 502 }
