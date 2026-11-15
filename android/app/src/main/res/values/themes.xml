@@ -6,4 +6,20 @@
         <item name="colorSecondary">@color/ovy_violet</item>
         <item name="colorSecondaryVariant">@color/ovy_violet</item>
     </style>
+
+    <!--
+      Usado só pela ShareActivity: mostra a tela de resultado como uma
+      caixinha flutuante por cima do WhatsApp (com ele escurecido atrás),
+      em vez de trocar de app de verdade — fechar volta direto pro WhatsApp.
+    -->
+    <style name="Theme.Ovy.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="colorPrimary">@color/ovy_navy</item>
+        <item name="colorSecondary">@color/ovy_violet</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowMinWidthMajor">88%</item>
+        <item name="android:windowMinWidthMinor">88%</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
 </resources>

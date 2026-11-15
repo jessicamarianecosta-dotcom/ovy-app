@@ -35,7 +35,7 @@
         <activity
             android:name=".ShareActivity"
             android:exported="true"
-            android:theme="@style/Theme.Ovy"
+            android:theme="@style/Theme.Ovy.Dialog"
             android:label="Transcrever com Ovy">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
