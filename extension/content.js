@@ -120,10 +120,21 @@
     linesEl.innerHTML = "";
     addLine("Ativando captura de áudio da aba…");
     const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 8000));
-    const response = await Promise.race([
-      chrome.runtime.sendMessage({ type: "START_CAPTURE" }).catch(() => null),
-      timeout,
-    ]);
+    let response = null;
+    try {
+      response = await Promise.race([
+        chrome.runtime.sendMessage({ type: "START_CAPTURE" }).catch(() => null),
+        timeout,
+      ]);
+    } catch {
+      response = null;
+    }
+    if (!isExtensionContextValid()) {
+      addLine("A extensão foi atualizada. Recarregue esta página (F5) e tente de novo.", true);
+      active = false;
+      fab.classList.remove("active");
+      return;
+    }
     if (!response?.ok) {
       addLine(
         response?.error ||
@@ -141,7 +152,11 @@
 
   async function stop() {
     if (isExtensionContextValid()) {
-      await chrome.runtime.sendMessage({ type: "STOP_CAPTURE" }).catch(() => {});
+      try {
+        await chrome.runtime.sendMessage({ type: "STOP_CAPTURE" }).catch(() => {});
+      } catch {
+        // contexto invalidado durante a chamada; ignora.
+      }
     }
     active = false;
     fab.classList.remove("active");
