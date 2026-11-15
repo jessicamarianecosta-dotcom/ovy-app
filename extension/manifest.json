@@ -19,6 +19,12 @@
   },
   "permissions": ["storage"],
   "host_permissions": ["https://ovy-app.vercel.app/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png"],
+      "matches": ["https://web.whatsapp.com/*"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
