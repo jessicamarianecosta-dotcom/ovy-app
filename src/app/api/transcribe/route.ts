@@ -31,15 +31,21 @@ export async function POST(request: Request) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  let durationSeconds: number;
+  const clientDurationRaw = formData.get("clientDurationSeconds");
+  const clientDurationSeconds =
+    typeof clientDurationRaw === "string" ? Math.ceil(Number(clientDurationRaw)) : 0;
+
+  let durationSeconds = 0;
   try {
     const metadata = await parseBuffer(buffer, file.type || undefined);
     durationSeconds = Math.ceil(metadata.format.duration ?? 0);
   } catch {
-    return NextResponse.json(
-      { error: "Não foi possível ler esse arquivo de áudio." },
-      { status: 400 }
-    );
+    // music-metadata não reconheceu o container (comum em alguns áudios do
+    // WhatsApp); cai para a duração medida pelo próprio navegador abaixo.
+  }
+
+  if (!durationSeconds || durationSeconds <= 0) {
+    durationSeconds = clientDurationSeconds;
   }
 
   if (!durationSeconds || durationSeconds <= 0) {

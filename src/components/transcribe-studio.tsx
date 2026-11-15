@@ -13,10 +13,30 @@ type Result = {
   durationSeconds: number;
 };
 
+function readDurationFromBrowser(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    const url = URL.createObjectURL(file);
+    const cleanup = () => URL.revokeObjectURL(url);
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      const duration = Number.isFinite(audio.duration) ? audio.duration : null;
+      cleanup();
+      resolve(duration);
+    };
+    audio.onerror = () => {
+      cleanup();
+      resolve(null);
+    };
+    audio.src = url;
+  });
+}
+
 export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
   const router = useRouter();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -55,6 +75,19 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
     if (file) void submitAudio(file);
   }
 
+  function onDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    const file = Array.from(event.dataTransfer.files).find((f) =>
+      f.type.startsWith("audio/")
+    );
+    if (file) {
+      void submitAudio(file);
+    } else {
+      toast.error("Solte um arquivo de áudio válido.");
+    }
+  }
+
   async function submitAudio(file: File) {
     if (minutesLeft <= 0) {
       toast.error("Seus minutos acabaram neste ciclo. Faça upgrade no plano Pro.");
@@ -63,8 +96,13 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
     setIsProcessing(true);
     setResult(null);
     try {
+      const browserDuration = await readDurationFromBrowser(file);
+
       const formData = new FormData();
       formData.append("audio", file);
+      if (browserDuration && browserDuration > 0) {
+        formData.append("clientDurationSeconds", String(Math.ceil(browserDuration)));
+      }
       const response = await fetch("/api/transcribe", {
         method: "POST",
         body: formData,
@@ -96,7 +134,19 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center">
+    <div
+      onDragOver={(event) => {
+        event.preventDefault();
+        setIsDraggingOver(true);
+      }}
+      onDragLeave={() => setIsDraggingOver(false)}
+      onDrop={onDrop}
+      className={`rounded-2xl border p-8 text-center transition ${
+        isDraggingOver
+          ? "border-violet-400 bg-violet-50"
+          : "border-neutral-200 bg-white"
+      }`}
+    >
       {isProcessing ? (
         <div className="flex flex-col items-center gap-3 py-8">
           <Loader2 className="h-8 w-8 animate-spin text-neutral-500" />
@@ -143,7 +193,7 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
             onChange={onFileSelected}
           />
           <p className="mt-4 text-xs text-neutral-400">
-            Áudios de até 4 minutos por transcrição.
+            Arraste e solte um arquivo aqui, ou áudios de até 4 minutos por transcrição.
           </p>
         </>
       )}
