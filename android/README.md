@@ -36,11 +36,22 @@ junto com as outras transcrições.
 1. No WhatsApp, mantenha pressionado um áudio recebido (mobile; WhatsApp
    Web/Desktop não tem essa opção de compartilhar nativamente — nesse caso
    baixe o áudio e suba manualmente em ovy-app.vercel.app).
-2. Toque em compartilhar/encaminhar (ícone de seta ou "⋮" → "Compartilhar")
-   e escolha **Ovy** na lista de apps.
+2. Toque em compartilhar/encaminhar (ícone de seta ou "⋮" → "Compartilhar").
+   O **Ovy aparece fixado/em destaque** na primeira fileira da tela de
+   compartilhar (Direct Share do Android) — não precisa rolar a lista de
+   apps pra achar.
 3. Uma tela simples abre, mostra "Transcrevendo o áudio…" e, quando
    terminar, o texto já organizado — com botões para copiar ou abrir a
    transcrição completa no site.
+
+### Sobre o Direct Share
+
+O destaque na tela de compartilhar usa o recurso oficial do Android
+(`android.app.shortcuts` + `share-target` em `res/xml/shortcuts.xml`) — não
+é automação nem leitura da tela do WhatsApp, só um atalho declarado que o
+próprio sistema prioriza. Pode levar alguns compartilhamentos para o
+Android "aprender" a priorizar o Ovy nessa lista, dependendo do fabricante
+do aparelho.
 
 ## Limitações conhecidas
 

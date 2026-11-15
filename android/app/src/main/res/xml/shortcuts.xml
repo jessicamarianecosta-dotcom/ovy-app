@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Faz o Ovy aparecer fixado/em destaque (Direct Share) na tela de
+  compartilhar do Android quando o conteúdo é um áudio — em vez de precisar
+  rolar a lista de apps pra achar o ícone.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <share-target android:targetClass="com.ovy.app.ShareActivity">
+        <data android:mimeType="audio/*" />
+        <category android:name="com.ovy.app.category.TRANSCRIBE" />
+    </share-target>
+
+    <shortcut
+        android:shortcutId="transcrever_audio"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/app_name"
+        android:shortcutLongLabel="@string/shortcut_transcribe_label">
+        <categories android:name="com.ovy.app.category.TRANSCRIBE" />
+    </shortcut>
+</shortcuts>

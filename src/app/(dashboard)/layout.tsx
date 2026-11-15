@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Mic, History, CreditCard, Settings, ShieldCheck, LogOut } from "lucide-react";
 import { getCurrentUser } from "@/lib/current-user";
 import { FloatingRecordButton } from "@/components/floating-record-button";
+import { InstallAppBanner } from "@/components/install-app-banner";
 import { signOutAction } from "./actions";
 
 const NAV_ITEMS = [
@@ -72,6 +73,7 @@ export default async function DashboardLayout({
             ))}
           </nav>
         </header>
+        <InstallAppBanner />
         <main className="flex-1 bg-neutral-50 p-4 sm:p-8">{children}</main>
       </div>
       <FloatingRecordButton />

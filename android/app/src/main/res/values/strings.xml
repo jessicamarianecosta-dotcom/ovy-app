@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Ovy</string>
+    <string name="shortcut_transcribe_label">Transcrever com Ovy</string>
 </resources>
