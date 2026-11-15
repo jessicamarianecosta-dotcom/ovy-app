@@ -18,9 +18,11 @@ nada de "ficar ouvindo" a página o tempo todo.
 1. Abra **web.whatsapp.com** normalmente.
 2. Em qualquer mensagem de áudio, vai aparecer um botão 📝 logo ao lado do
    player. Clique nele.
-3. Em alguns casos a extensão precisa simular um toque no play pra o
-   WhatsApp carregar o áudio (ele mantém mutado e pausa na hora — você não
-   ouve nada) antes de conseguir ler o arquivo.
+3. O WhatsApp Web usa um player customizado (sem tag `<audio>` comum), então
+   a extensão precisa simular o play pra conseguir capturar o arquivo —
+   isso causa um **toquinho bem rápido de som** antes de pausar
+   automaticamente. Não tem como evitar isso 100% com a forma como o
+   WhatsApp Web funciona.
 4. O texto transcrito e organizado aparece logo abaixo da mensagem.
 
 ## Limitações conhecidas
@@ -31,6 +33,10 @@ nada de "ficar ouvindo" a página o tempo todo.
 - Como o WhatsApp Web muda a estrutura da página de vez em quando, o botão
   pode parar de aparecer depois de uma atualização deles — avise se isso
   acontecer, pra eu ajustar.
+- A captura depende de interceptar uma função interna do navegador
+  (`AudioContext.decodeAudioData`) no momento em que o WhatsApp decodifica
+  o áudio — se eles mudarem a forma de tocar o áudio, pode parar de
+  funcionar e precisar de ajuste.
 - Mesmo limite de 4 minutos por áudio e de minutos do seu plano que vale
   pra qualquer transcrição no Ovy.
 - Não publicada na Chrome Web Store; funciona só em modo desenvolvedor,
