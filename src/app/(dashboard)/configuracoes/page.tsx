@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/current-user";
+import { ApiKeyCard } from "@/components/api-key-card";
 import { signOutAction } from "../actions";
 
 export default async function ConfiguracoesPage() {
@@ -26,6 +27,8 @@ export default async function ConfiguracoesPage() {
           </div>
         </dl>
       </div>
+
+      <ApiKeyCard initialApiKey={user.apiKey} />
 
       <form action={signOutAction} className="mt-6">
         <button

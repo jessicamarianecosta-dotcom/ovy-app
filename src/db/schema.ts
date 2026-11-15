@@ -17,6 +17,7 @@ export const users = sqliteTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeSubscriptionStatus: text("stripe_subscription_status"),
   isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+  apiKey: text("api_key").unique(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
