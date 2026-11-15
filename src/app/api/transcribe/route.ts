@@ -3,7 +3,7 @@ import { parseBuffer } from "music-metadata";
 import { requireUser } from "@/lib/current-user";
 import { getUserByApiKey } from "@/lib/api-key-auth";
 import { remainingMinutes, resetCycleIfNeeded, consumeMinutes } from "@/lib/minutes";
-import { transcribeAudio, organizeTranscript } from "@/lib/replicate";
+import { transcribeAudio, organizeTranscript } from "@/lib/groq";
 import { db } from "@/db";
 import { transcriptions } from "@/db/schema";
 import { MAX_TRANSCRIPTION_SECONDS } from "@/lib/billing-cycle";
@@ -84,12 +84,12 @@ export async function POST(request: Request) {
     faithfulText = await transcribeAudio(buffer, file.type || "audio/mpeg");
   } catch (error) {
     console.error("Erro na transcrição:", error);
-    const replicateError = error as Error & { response?: { status?: number } };
-    if (replicateError.response?.status === 402) {
+    const transcriptionError = error as Error & { response?: { status?: number } };
+    if (transcriptionError.response?.status === 402 || transcriptionError.response?.status === 429) {
       return NextResponse.json(
         {
           error:
-            "O motor de transcrição está sem crédito no momento. Tente novamente em alguns minutos.",
+            "O motor de transcrição está indisponível no momento (limite ou crédito). Tente novamente em alguns minutos.",
         },
         { status: 502 }
       );

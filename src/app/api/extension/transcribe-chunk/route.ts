@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserByApiKey } from "@/lib/api-key-auth";
-import { transcribeAudio } from "@/lib/replicate";
+import { transcribeAudio } from "@/lib/groq";
 
 export const maxDuration = 30;
 
@@ -32,32 +32,31 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Erro na transcrição da extensão:", error);
 
-    const replicateError = error as Error & {
+    const transcriptionError = error as Error & {
       response?: { status?: number; headers?: Headers };
     };
-    const status = replicateError.response?.status;
+    const status = transcriptionError.response?.status;
 
     if (status === 429) {
-      const retryAfter = Number(replicateError.response?.headers?.get?.("retry-after")) || 5;
+      const retryAfter = Number(transcriptionError.response?.headers?.get?.("retry-after")) || 5;
       return NextResponse.json(
         {
-          error:
-            "Limite de requisições do Replicate atingido. Adicione um método de pagamento na sua conta Replicate para aumentar o limite.",
+          error: "Limite de requisições atingido. Aguardando um pouco antes de continuar.",
           retryAfter,
         },
         { status: 429 }
       );
     }
 
-    if (status === 422) {
+    if (status === 422 || status === 400) {
       return NextResponse.json(
-        { error: "O modelo de transcrição recusou este áudio (formato ou versão inválida)." },
+        { error: "O motor de transcrição recusou este áudio (formato inválido)." },
         { status: 502 }
       );
     }
 
     return NextResponse.json(
-      { error: `Falha ao transcrever este bloco (${replicateError.message || "erro desconhecido"}).` },
+      { error: `Falha ao transcrever este bloco (${transcriptionError.message || "erro desconhecido"}).` },
       { status: 502 }
     );
   }
