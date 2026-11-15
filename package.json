@@ -1,23 +1,44 @@
 {
-  "name": "transcreve-plus",
+  "name": "ovy-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.3",
+    "@hookform/resolvers": "^7.0.6",
+    "@libsql/client": "^0.18.0",
+    "@stripe/stripe-js": "^10.3.0",
+    "date-fns": "^4.4.0",
+    "docx": "^9.15.4",
+    "drizzle-orm": "^0.45.4",
+    "lucide-react": "^1.73.0",
+    "music-metadata": "^12.5.0",
     "next": "16.4.6",
+    "next-auth": "^5.0.0-beta.32",
+    "pdf-lib": "^1.17.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-hook-form": "^7.92.0",
+    "replicate": "^1.4.0",
+    "resend": "^6.38.1",
+    "sonner": "^2.0.8",
+    "stripe": "^23.1.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
