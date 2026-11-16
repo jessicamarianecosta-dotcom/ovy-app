@@ -102,22 +102,41 @@
     return true;
   }
 
-  // A linha role="row" do WhatsApp Web ocupa a largura INTEIRA da
-  // conversa (é só o slot de layout/virtualização) — a bolha de verdade,
-  // do tamanho certo, é o elemento com classe "message-in" (recebida) ou
-  // "message-out" (enviada por mim) logo dentro dela. Pra posicionar a
-  // logo coladinha na bolha (e não na largura toda), precisamos achar
-  // esse elemento específico, não a row.
-  function findMessageBubble(el) {
-    let node = el;
-    while (node && node !== document.body) {
-      if (node.classList) {
-        if (node.classList.contains("message-out")) return { node, outgoing: true };
-        if (node.classList.contains("message-in")) return { node, outgoing: false };
+  // Tentamos antes achar a bolha por nome de classe ("message-in" /
+  // "message-out"), mas isso não bateu com a estrutura real da página
+  // (todo mundo caindo no mesmo lugar). Em vez de adivinhar nomes de
+  // classe que podem mudar entre versões do WhatsApp Web, usamos só
+  // geometria: a "linha" (role="row") sempre ocupa a largura inteira da
+  // conversa, então dá pra saber se a mensagem é recebida (metade
+  // esquerda) ou enviada (metade direita) comparando o centro do botão
+  // de play com o centro da linha — e achar a bolha de verdade subindo
+  // a partir do botão até o último ancestral bem mais estreito que a
+  // linha inteira (a bolha não ocupa a largura toda, a linha sim).
+  function isOutgoingByPosition(playButton, rowEl) {
+    if (!rowEl) return false;
+    const rowRect = rowEl.getBoundingClientRect();
+    const btnRect = playButton.getBoundingClientRect();
+    if (!rowRect.width || !btnRect.width) return false;
+    const btnCenter = (btnRect.left + btnRect.right) / 2;
+    const rowCenter = (rowRect.left + rowRect.right) / 2;
+    return btnCenter > rowCenter;
+  }
+
+  function findNarrowBubble(playButton, rowEl) {
+    const rowWidth = rowEl ? rowEl.getBoundingClientRect().width : 0;
+    const limit = rowWidth > 0 ? rowWidth * 0.75 : Infinity;
+    let node = playButton.parentElement;
+    let best = null;
+    for (let i = 0; i < 14 && node && node !== document.body && node !== rowEl; i++) {
+      const width = node.getBoundingClientRect().width;
+      if (width > 0 && width < limit) {
+        best = node;
+      } else if (best) {
+        break;
       }
       node = node.parentElement;
     }
-    return null;
+    return best;
   }
 
   // Grava o áudio de SAÍDA da aba (depois de qualquer descriptografia/
@@ -250,9 +269,8 @@
     // a posição da bolha automaticamente, por CSS puro, sem precisar
     // ouvir scroll/resize nem recalcular nada.
     const container = findMessageContainer(playButton);
-    const bubbleInfo = findMessageBubble(playButton);
-    const bubble = bubbleInfo?.node || container || playButton.parentElement;
-    const outgoing = bubbleInfo?.outgoing ?? false;
+    const outgoing = isOutgoingByPosition(playButton, container);
+    const bubble = findNarrowBubble(playButton, container) || container || playButton.parentElement;
     // Corner oposto à borda da tela que a bolha já está perto, pra logo
     // não ficar cortada fora da área visível.
     const sideClass = outgoing ? "ovy-side-left" : "ovy-side-right";
