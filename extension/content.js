@@ -11,12 +11,12 @@
   const style = document.createElement("style");
   style.textContent = `
     .ovy-btn {
-      position: fixed;
+      position: absolute;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 999px;
       background: #111B36;
       color: #fff;
@@ -25,26 +25,31 @@
       cursor: pointer;
       font-size: 13px;
       flex-shrink: 0;
-      z-index: 2147483000;
+      z-index: 20;
       padding: 0;
+      bottom: -10px;
     }
+    .ovy-btn.ovy-side-left { left: -10px; }
+    .ovy-btn.ovy-side-right { right: -10px; }
     .ovy-btn:hover { background: #1b2a52; }
     .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; opacity: 0.85; }
     .ovy-btn.ovy-done { background: #16a34a; }
     .ovy-btn img {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       object-fit: cover;
       display: block;
       pointer-events: none;
     }
     .ovy-result {
-      position: fixed;
+      position: absolute;
       display: block;
       box-sizing: border-box;
-      width: 280px;
-      max-width: 90vw;
+      width: 260px;
+      max-width: 80vw;
+      top: 100%;
+      margin-top: 6px;
       padding: 8px 10px;
       border-radius: 10px;
       background: #fff;
@@ -55,8 +60,10 @@
       white-space: normal;
       word-break: normal;
       overflow-wrap: break-word;
-      z-index: 2147483000;
+      z-index: 21;
     }
+    .ovy-result.ovy-side-left { left: 0; }
+    .ovy-result.ovy-side-right { right: 0; }
     .ovy-result.ovy-error { color: #b91c1c; }
   `;
   document.documentElement.appendChild(style);
@@ -236,20 +243,26 @@
   }
 
   function attachButtonUnsafe(playButton) {
-    // O WhatsApp Web virtualiza a lista de mensagens (às vezes com
-    // flex-direction invertido internamente), então anexar a caixinha
-    // como filha do DOM da mensagem é imprevisível — ela pode aparecer
-    // acima, embaixo ou longe do lugar certo dependendo da estrutura
-    // interna deles. Em vez disso, ancoramos pela posição REAL na tela
-    // (getBoundingClientRect) da bolha da mensagem, com position:fixed,
-    // e recalculamos a cada scroll/resize — assim funciona não importa
-    // como o WhatsApp organiza o DOM por dentro.
+    // Em vez de calcular a posição na tela via JavaScript (frágil: depende
+    // de recalcular a toda hora, erra se a conta tiver um ajuste errado),
+    // a logo é anexada como filha da própria bolha da mensagem
+    // (position: absolute dentro dela) — assim ela acompanha o tamanho e
+    // a posição da bolha automaticamente, por CSS puro, sem precisar
+    // ouvir scroll/resize nem recalcular nada.
     const container = findMessageContainer(playButton);
     const bubbleInfo = findMessageBubble(playButton);
+    const bubble = bubbleInfo?.node || container || playButton.parentElement;
     const outgoing = bubbleInfo?.outgoing ?? false;
+    // Corner oposto à borda da tela que a bolha já está perto, pra logo
+    // não ficar cortada fora da área visível.
+    const sideClass = outgoing ? "ovy-side-left" : "ovy-side-right";
+
+    if (bubble && getComputedStyle(bubble).position === "static") {
+      bubble.style.position = "relative";
+    }
 
     const button = document.createElement("button");
-    button.className = "ovy-btn";
+    button.className = `ovy-btn ${sideClass}`;
     button.type = "button";
     button.title = "Transcrever com Ovy";
     const logo = document.createElement("img");
@@ -258,65 +271,16 @@
     button.appendChild(logo);
 
     const resultEl = document.createElement("div");
-    resultEl.className = "ovy-result";
+    resultEl.className = `ovy-result ${sideClass}`;
     resultEl.style.display = "none";
 
-    document.body.appendChild(button);
-    document.body.appendChild(resultEl);
-
-    const anchorEl = bubbleInfo?.node || container || playButton;
-
-    function reposition() {
-      if (!document.body.contains(anchorEl) || !document.body.contains(playButton)) {
-        cleanup();
-        return;
-      }
-      const rect = anchorEl.getBoundingClientRect();
-      const top = rect.bottom - 14;
-      // O botão fica só a logo, coladinho na pontinha da bolha — sem
-      // caixa nem texto; a caixa de resultado só aparece quando a
-      // transcrição estiver pronta (ou der erro).
-      if (outgoing) {
-        button.style.left = "";
-        button.style.right = `${Math.max(8, window.innerWidth - rect.right + 4)}px`;
-      } else {
-        button.style.right = "";
-        button.style.left = `${Math.max(8, rect.right - 32)}px`;
-      }
-      button.style.top = `${top}px`;
-
-      const resultTop = rect.bottom + 6;
-      resultEl.style.top = `${resultTop}px`;
-      if (outgoing) {
-        resultEl.style.left = "";
-        resultEl.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
-      } else {
-        resultEl.style.right = "";
-        resultEl.style.left = `${Math.max(8, rect.left)}px`;
-      }
-    }
-
-    function cleanup() {
-      button.remove();
-      resultEl.remove();
-      clearInterval(watcher);
-      window.removeEventListener("scroll", reposition, true);
-      window.removeEventListener("resize", reposition);
-    }
-
-    // Scroll dentro da área de mensagens dispara evento de scroll (captura
-    // pega qualquer ancestral rolável); o intervalo cobre mudanças de
-    // layout do WhatsApp que não disparam scroll/resize (nova mensagem
-    // chegando, virtualização recalculando alturas).
-    window.addEventListener("scroll", reposition, true);
-    window.addEventListener("resize", reposition);
-    const watcher = setInterval(reposition, 400);
-    reposition();
+    (bubble || document.body).appendChild(button);
+    (bubble || document.body).appendChild(resultEl);
 
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      transcribe(playButton, container || document, button, resultEl).finally(reposition);
+      transcribe(playButton, container || document, button, resultEl);
     });
   }
 
