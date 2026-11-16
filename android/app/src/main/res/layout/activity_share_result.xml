@@ -61,6 +61,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:backgroundTint="@color/ovy_navy"
+            android:textColor="@color/white"
             android:text="Abrir no Ovy"
             android:visibility="gone" />
 
@@ -69,6 +71,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:backgroundTint="@color/ovy_navy"
+            android:textColor="@color/white"
             android:text="Fechar" />
 
     </LinearLayout>
