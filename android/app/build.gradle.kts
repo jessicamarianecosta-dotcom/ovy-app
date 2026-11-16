@@ -15,7 +15,25 @@ android {
         versionName = "1.0"
     }
 
+    // Uma keystore de debug fixa (versionada no repo) garante que todo build
+    // — seja daqui, do GitHub Actions ou de qualquer máquina — saia assinado
+    // sempre com a mesma identidade. Sem isso, cada build do zero (ex: um
+    // runner novo do GitHub Actions) gera uma keystore de debug diferente, e
+    // o Android trata isso como "outro app": reinstalar pode falhar ou criar
+    // um segundo ícone em vez de atualizar o mesmo app.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("../debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
         }
