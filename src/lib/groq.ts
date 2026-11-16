@@ -43,9 +43,10 @@ export async function transcribeAudio(audioBuffer: Buffer, mimeType: string): Pr
   return data.text?.trim() || "";
 }
 
-// llama-3.1-8b-instant: modelo pequeno/rápido da Groq só pra limpar
-// pontuação e repetições (versão "organizada").
-const TEXT_CLEANUP_MODEL = "llama-3.1-8b-instant";
+// A Groq aposentou o llama-3.1-8b-instant pro tier grátis/developer em
+// ago/2026 — openai/gpt-oss-20b é o substituto recomendado por eles pra
+// esse tipo de tarefa pequena (só limpar pontuação e repetições).
+const TEXT_CLEANUP_MODEL = "openai/gpt-oss-20b";
 
 export async function organizeTranscript(faithfulText: string): Promise<string> {
   const prompt = `Você recebe a transcrição literal de um áudio em português. Reescreva corrigindo pontuação, ortografia e removendo repetições e vícios de fala desnecessários ("é", "né", "tipo assim" repetidos), SEM alterar o sentido, SEM resumir e SEM adicionar informação nova. Devolva apenas o texto final, sem comentários.

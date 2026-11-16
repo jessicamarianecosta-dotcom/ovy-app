@@ -8,6 +8,7 @@ export default async function EntrarPage({
   const params = await searchParams;
   const callbackUrl = typeof params.callbackUrl === "string" ? params.callbackUrl : "/app";
   const mode = params.cadastro !== undefined ? "cadastro" : "entrar";
+  const erro = typeof params.erro === "string" ? params.erro : null;
 
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-16">
@@ -21,6 +22,12 @@ export default async function EntrarPage({
           </h1>
           <p className="mt-1 text-sm text-neutral-500">Falou, transcreveu. Sem digitação.</p>
         </div>
+
+        {erro && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            {erro}
+          </div>
+        )}
 
         {mode === "cadastro" ? (
           <form action={signUpWithPassword} className="mt-6 space-y-3">
