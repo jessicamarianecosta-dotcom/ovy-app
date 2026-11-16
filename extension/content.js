@@ -11,7 +11,7 @@
   const style = document.createElement("style");
   style.textContent = `
     .ovy-btn {
-      position: absolute;
+      position: fixed;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -25,12 +25,9 @@
       cursor: pointer;
       font-size: 13px;
       flex-shrink: 0;
-      z-index: 20;
+      z-index: 2147483000;
       padding: 0;
-      bottom: -10px;
     }
-    .ovy-btn.ovy-side-left { left: -10px; }
-    .ovy-btn.ovy-side-right { right: -10px; }
     .ovy-btn:hover { background: #1b2a52; }
     .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; opacity: 0.85; }
     .ovy-btn.ovy-done { background: #16a34a; }
@@ -43,13 +40,11 @@
       pointer-events: none;
     }
     .ovy-result {
-      position: absolute;
+      position: fixed;
       display: block;
       box-sizing: border-box;
       width: 260px;
       max-width: 80vw;
-      top: 100%;
-      margin-top: 6px;
       padding: 8px 10px;
       border-radius: 10px;
       background: #fff;
@@ -60,10 +55,8 @@
       white-space: normal;
       word-break: normal;
       overflow-wrap: break-word;
-      z-index: 21;
+      z-index: 2147483000;
     }
-    .ovy-result.ovy-side-left { left: 0; }
-    .ovy-result.ovy-side-right { right: 0; }
     .ovy-result.ovy-error { color: #b91c1c; }
   `;
   document.documentElement.appendChild(style);
@@ -262,25 +255,19 @@
   }
 
   function attachButtonUnsafe(playButton) {
-    // Em vez de calcular a posição na tela via JavaScript (frágil: depende
-    // de recalcular a toda hora, erra se a conta tiver um ajuste errado),
-    // a logo é anexada como filha da própria bolha da mensagem
-    // (position: absolute dentro dela) — assim ela acompanha o tamanho e
-    // a posição da bolha automaticamente, por CSS puro, sem precisar
-    // ouvir scroll/resize nem recalcular nada.
+    // A logo precisa ficar SEMPRE por cima de qualquer mensagem (inclusive
+    // as que vêm depois, mais abaixo na conversa). Anexada como filha da
+    // bolha, ela fica presa à ordem de empilhamento (z-index) daquela
+    // bolha específica, que pode ser "coberta" pela próxima mensagem.
+    // Por isso ela vai direto no body (sempre por cima de tudo), com
+    // position: fixed, mas usando a MESMA posição geométrica real da
+    // bolha (calculada uma vez e recalculada no scroll/resize).
     const container = findMessageContainer(playButton);
     const outgoing = isOutgoingByPosition(playButton, container);
     const bubble = findNarrowBubble(playButton, container) || container || playButton.parentElement;
-    // Corner oposto à borda da tela que a bolha já está perto, pra logo
-    // não ficar cortada fora da área visível.
-    const sideClass = outgoing ? "ovy-side-left" : "ovy-side-right";
-
-    if (bubble && getComputedStyle(bubble).position === "static") {
-      bubble.style.position = "relative";
-    }
 
     const button = document.createElement("button");
-    button.className = `ovy-btn ${sideClass}`;
+    button.className = "ovy-btn";
     button.type = "button";
     button.title = "Transcrever com Ovy";
     const logo = document.createElement("img");
@@ -289,16 +276,51 @@
     button.appendChild(logo);
 
     const resultEl = document.createElement("div");
-    resultEl.className = `ovy-result ${sideClass}`;
+    resultEl.className = "ovy-result";
     resultEl.style.display = "none";
 
-    (bubble || document.body).appendChild(button);
-    (bubble || document.body).appendChild(resultEl);
+    document.body.appendChild(button);
+    document.body.appendChild(resultEl);
+
+    function reposition() {
+      if (!document.body.contains(bubble) || !document.body.contains(playButton)) {
+        cleanup();
+        return;
+      }
+      const rect = bubble.getBoundingClientRect();
+      const top = rect.bottom - 14;
+      button.style.top = `${top}px`;
+      if (outgoing) {
+        button.style.left = "";
+        button.style.right = `${Math.max(8, window.innerWidth - rect.right - 10)}px`;
+        resultEl.style.left = "";
+        resultEl.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
+      } else {
+        button.style.right = "";
+        button.style.left = `${Math.max(8, rect.right - 16)}px`;
+        resultEl.style.right = "";
+        resultEl.style.left = `${Math.max(8, rect.left)}px`;
+      }
+      resultEl.style.top = `${rect.bottom + 6}px`;
+    }
+
+    function cleanup() {
+      button.remove();
+      resultEl.remove();
+      clearInterval(watcher);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    }
+
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    const watcher = setInterval(reposition, 400);
+    reposition();
 
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      transcribe(playButton, container || document, button, resultEl);
+      transcribe(playButton, container || document, button, resultEl).finally(reposition);
     });
   }
 
