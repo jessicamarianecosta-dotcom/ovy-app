@@ -95,19 +95,22 @@
     return true;
   }
 
-  // Mensagens enviadas por mim ficam alinhadas à direita (classe
-  // "message-out"), as recebidas à esquerda ("message-in") — alinha a
-  // caixinha do Ovy do mesmo lado da bolha do áudio.
-  function isOutgoingMessage(el) {
+  // A linha role="row" do WhatsApp Web ocupa a largura INTEIRA da
+  // conversa (é só o slot de layout/virtualização) — a bolha de verdade,
+  // do tamanho certo, é o elemento com classe "message-in" (recebida) ou
+  // "message-out" (enviada por mim) logo dentro dela. Pra posicionar a
+  // logo coladinha na bolha (e não na largura toda), precisamos achar
+  // esse elemento específico, não a row.
+  function findMessageBubble(el) {
     let node = el;
     while (node && node !== document.body) {
       if (node.classList) {
-        if (node.classList.contains("message-out")) return true;
-        if (node.classList.contains("message-in")) return false;
+        if (node.classList.contains("message-out")) return { node, outgoing: true };
+        if (node.classList.contains("message-in")) return { node, outgoing: false };
       }
       node = node.parentElement;
     }
-    return false;
+    return null;
   }
 
   // Grava o áudio de SAÍDA da aba (depois de qualquer descriptografia/
@@ -242,7 +245,8 @@
     // e recalculamos a cada scroll/resize — assim funciona não importa
     // como o WhatsApp organiza o DOM por dentro.
     const container = findMessageContainer(playButton);
-    const outgoing = isOutgoingMessage(container || playButton);
+    const bubbleInfo = findMessageBubble(playButton);
+    const outgoing = bubbleInfo?.outgoing ?? false;
 
     const button = document.createElement("button");
     button.className = "ovy-btn";
@@ -260,7 +264,7 @@
     document.body.appendChild(button);
     document.body.appendChild(resultEl);
 
-    const anchorEl = container || playButton;
+    const anchorEl = bubbleInfo?.node || container || playButton;
 
     function reposition() {
       if (!document.body.contains(anchorEl) || !document.body.contains(playButton)) {
