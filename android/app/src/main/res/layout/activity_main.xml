@@ -1,55 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:orientation="vertical">
 
-    <LinearLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:background="@color/ovy_surface">
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/ovy_navy"
+        android:elevation="4dp"
+        app:titleTextColor="@color/white" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ovy — transcrever sem ouvir"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="@color/ovy_navy"
-            android:layout_marginBottom="16dp" />
+    <ProgressBar
+        android:id="@+id/loadingBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:indeterminate="true"
+        android:visibility="gone" />
 
-        <EditText
-            android:id="@+id/apiKeyInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Chave de API (gere em ovy-app.vercel.app/configuracoes)"
-            android:inputType="textVisiblePassword" />
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-        <Button
-            android:id="@+id/saveKeyButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Salvar chave" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/ovy_navy"
-            android:text="Como usar no WhatsApp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="14sp"
-            android:textColor="@color/ovy_navy"
-            android:text="1. Cole e salve sua chave de API acima (só precisa fazer isso uma vez).\n2. No WhatsApp, mantenha pressionado um áudio recebido.\n3. Toque em compartilhar/encaminhar e escolha &quot;Ovy&quot;.\n4. O texto transcrito aparece na tela, sem você precisar tocar o áudio." />
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

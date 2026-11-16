@@ -23,6 +23,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ApiKeySettingsActivity"
+            android:exported="false"
+            android:label="Chave de API" />
+
         <!--
           Recebe o compartilhamento de um áudio (ex: WhatsApp → ⋮ → Compartilhar
           → Ovy) e manda transcrever sem precisar ouvir a mensagem.
