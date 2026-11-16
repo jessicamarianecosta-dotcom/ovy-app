@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mic, Square, Upload, Loader2 } from "lucide-react";
 import { TranscriptionEditor } from "@/components/transcription-editor";
+import { MAX_TRANSCRIPTION_SECONDS } from "@/lib/billing-cycle";
+
+const MAX_TRANSCRIPTION_MINUTES = Math.floor(MAX_TRANSCRIPTION_SECONDS / 60);
 
 type Result = {
   id: string;
@@ -193,7 +196,7 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
             onChange={onFileSelected}
           />
           <p className="mt-4 text-xs text-neutral-400">
-            Arraste e solte um arquivo aqui, ou áudios de até 4 minutos por transcrição.
+            Arraste e solte um arquivo aqui, ou áudios de até {MAX_TRANSCRIPTION_MINUTES} minutos por transcrição.
           </p>
         </>
       )}

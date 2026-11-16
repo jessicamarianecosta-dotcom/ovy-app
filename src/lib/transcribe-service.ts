@@ -46,7 +46,12 @@ export async function transcribeAndSave(
     return { ok: false, error: "Não foi possível determinar a duração do áudio.", status: 400 };
   }
   if (durationSeconds > MAX_TRANSCRIPTION_SECONDS) {
-    return { ok: false, error: "O áudio excede o limite de 4 minutos por transcrição.", status: 400 };
+    const maxMinutes = Math.floor(MAX_TRANSCRIPTION_SECONDS / 60);
+    return {
+      ok: false,
+      error: `O áudio excede o limite de ${maxMinutes} minutos por transcrição.`,
+      status: 400,
+    };
   }
 
   const freshUser = await resetCycleIfNeeded(user);

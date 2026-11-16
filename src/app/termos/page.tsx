@@ -38,7 +38,7 @@ export default function TermosPage() {
 
         <h2 className="mt-6 text-lg font-semibold text-ovy-navy">4. Limites técnicos</h2>
         <p className="mt-2">
-          Cada transcrição aceita áudios de até 4 minutos. Esse limite pode
+          Cada transcrição aceita áudios de até 2 minutos. Esse limite pode
           mudar conforme evoluirmos o serviço.
         </p>
 

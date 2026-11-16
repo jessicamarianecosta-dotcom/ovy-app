@@ -37,7 +37,7 @@ nada de "ficar ouvindo" a página o tempo todo.
   (`AudioContext.decodeAudioData`) no momento em que o WhatsApp decodifica
   o áudio — se eles mudarem a forma de tocar o áudio, pode parar de
   funcionar e precisar de ajuste.
-- Mesmo limite de 4 minutos por áudio e de minutos do seu plano que vale
+- Mesmo limite de 2 minutos por áudio e de minutos do seu plano que vale
   pra qualquer transcrição no Ovy.
 - Não publicada na Chrome Web Store; funciona só em modo desenvolvedor,
   carregada manualmente.

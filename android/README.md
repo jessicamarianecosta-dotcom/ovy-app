@@ -67,7 +67,7 @@ muda nada no celular até reinstalar.
 
 - Funciona só com áudios já recebidos/baixados no aparelho (o que é o caso
   normal de mensagens de voz do WhatsApp) — não com áudio tocando ao vivo.
-- Mesmo limite de 4 minutos por áudio e de minutos do seu plano que vale
+- Mesmo limite de 2 minutos por áudio e de minutos do seu plano que vale
   para qualquer transcrição no Ovy.
 - Não publicado na Play Store — instale manualmente via Android Studio
   (`Run` em um aparelho, ou `Build > Build Bundle(s) / APK(s) > Build
