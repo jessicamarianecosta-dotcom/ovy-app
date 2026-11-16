@@ -14,7 +14,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  session: { strategy: "database" },
+  // O provider Credentials (login por senha) só funciona com sessão em JWT
+  // — ele não passa pelo fluxo de criação de sessão do adapter como OAuth
+  // ou e-mail fazem. Com "database" aqui, o login por senha "funcionava"
+  // (sem erro) mas nunca criava sessão de verdade, e a pessoa voltava pro
+  // /entrar como se nada tivesse acontecido. O adapter continua cuidando
+  // de usuários/contas/tokens normalmente; só a sessão vira um cookie JWT.
+  session: { strategy: "jwt" },
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user) session.user.id = token.id as string;
+      return session;
+    },
+  },
   providers: [
     // Login nativo com e-mail/senha. O Google foi removido por enquanto;
     // volta a ser fácil de reativar (bastava adicionar o provider de novo),
