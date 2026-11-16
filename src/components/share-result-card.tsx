@@ -50,7 +50,14 @@ export function ShareResultCard({
         </button>
         <button
           type="button"
-          onClick={() => router.push("/app")}
+          onClick={() => {
+            // Volta pro app que chamou o compartilhamento (o WhatsApp),
+            // em vez de navegar pra outra tela dentro do próprio Ovy.
+            // window.close() funciona em alguns navegadores quando essa é
+            // a única página da aba; o fallback cobre o resto dos casos.
+            window.close();
+            window.history.back();
+          }}
           className="w-full rounded-full px-4 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-100"
         >
           Fechar
