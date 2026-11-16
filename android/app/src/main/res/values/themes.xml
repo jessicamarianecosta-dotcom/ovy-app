@@ -16,6 +16,9 @@
         <item name="colorPrimary">@color/ovy_navy</item>
         <item name="colorSecondary">@color/ovy_violet</item>
         <item name="android:windowIsFloating">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
         <item name="android:windowMinWidthMajor">88%</item>
         <item name="android:windowMinWidthMinor">88%</item>
         <item name="android:backgroundDimEnabled">true</item>
