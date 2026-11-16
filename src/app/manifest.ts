@@ -33,5 +33,24 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
-  };
+    // Faz o Ovy, quando instalado como PWA, aparecer na própria tela de
+    // compartilhar do Android (ex: WhatsApp → ⋮ → Compartilhar → Ovy) —
+    // sem instalar nenhum app nativo, sem "fontes desconhecidas". Suportado
+    // no Chrome/Android; não existe equivalente no Safari/iOS ainda.
+    // O tipo oficial do Next não inclui share_target, mas o campo é válido
+    // na especificação do Web App Manifest.
+    share_target: {
+      action: "/api/share-target",
+      method: "POST",
+      enctype: "multipart/form-data",
+      params: {
+        files: [
+          {
+            name: "audio",
+            accept: ["audio/*", "application/ogg", "application/octet-stream"],
+          },
+        ],
+      },
+    },
+  } as MetadataRoute.Manifest;
 }

@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
-import { parseBuffer } from "music-metadata";
 import { requireUser } from "@/lib/current-user";
 import { getUserByApiKey } from "@/lib/api-key-auth";
-import { remainingMinutes, resetCycleIfNeeded, consumeMinutes } from "@/lib/minutes";
-import { transcribeAudio, organizeTranscript } from "@/lib/groq";
-import { db } from "@/db";
-import { transcriptions } from "@/db/schema";
-import { MAX_TRANSCRIPTION_SECONDS } from "@/lib/billing-cycle";
+import { transcribeAndSave } from "@/lib/transcribe-service";
 
 export const maxDuration = 120;
-
-const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB, folga para áudio de até 4min
 
 // A extensão Chrome chama esse endpoint a partir de um content script (ou
 // seja, como se fosse a própria página do WhatsApp Web fazendo a chamada),
@@ -52,103 +45,20 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return json({ error: "Nenhum arquivo de áudio enviado." }, { status: 400 });
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return json({ error: "Arquivo muito grande (máx. 25MB)." }, { status: 413 });
-  }
-
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
 
   const clientDurationRaw = formData.get("clientDurationSeconds");
   const clientDurationSeconds =
     typeof clientDurationRaw === "string" ? Math.ceil(Number(clientDurationRaw)) : 0;
 
-  let durationSeconds = 0;
-  try {
-    const metadata = await parseBuffer(buffer, file.type || undefined);
-    durationSeconds = Math.ceil(metadata.format.duration ?? 0);
-  } catch {
-    // music-metadata não reconheceu o container (comum em alguns áudios do
-    // WhatsApp); cai para a duração medida pelo próprio navegador abaixo.
+  const result = await transcribeAndSave(user, file, clientDurationSeconds);
+  if (!result.ok) {
+    return json({ error: result.error, code: result.code }, { status: result.status });
   }
-
-  if (!durationSeconds || durationSeconds <= 0) {
-    durationSeconds = clientDurationSeconds;
-  }
-
-  if (!durationSeconds || durationSeconds <= 0) {
-    return json(
-      { error: "Não foi possível determinar a duração do áudio." },
-      { status: 400 }
-    );
-  }
-  if (durationSeconds > MAX_TRANSCRIPTION_SECONDS) {
-    return json(
-      { error: "O áudio excede o limite de 4 minutos por transcrição." },
-      { status: 400 }
-    );
-  }
-
-  user = await resetCycleIfNeeded(user);
-  const neededMinutes = Math.ceil(durationSeconds / 60);
-  if (remainingMinutes(user) < neededMinutes) {
-    return json(
-      {
-        error:
-          "Seus minutos acabaram neste ciclo. Faça upgrade para o plano Pro ou compre um pacote extra.",
-        code: "OUT_OF_MINUTES",
-      },
-      { status: 402 }
-    );
-  }
-
-  let faithfulText: string;
-  try {
-    faithfulText = await transcribeAudio(buffer, file.type || "audio/mpeg");
-  } catch (error) {
-    console.error("Erro na transcrição:", error);
-    const transcriptionError = error as Error & { response?: { status?: number } };
-    if (transcriptionError.response?.status === 402 || transcriptionError.response?.status === 429) {
-      return json(
-        {
-          error:
-            "O motor de transcrição está indisponível no momento (limite ou crédito). Tente novamente em alguns minutos.",
-        },
-        { status: 502 }
-      );
-    }
-    return json(
-      { error: "Falha ao transcrever o áudio. Tente novamente." },
-      { status: 502 }
-    );
-  }
-
-  let organizedText: string;
-  try {
-    organizedText = await organizeTranscript(faithfulText);
-  } catch (error) {
-    console.error("Erro ao organizar texto:", error);
-    organizedText = faithfulText;
-  }
-
-  const id = crypto.randomUUID();
-  await db.insert(transcriptions).values({
-    id,
-    userId: user.id,
-    title: file.name?.replace(/\.[^.]+$/, "") || "Transcrição sem título",
-    durationSeconds,
-    faithfulText,
-    organizedText,
-    activeVersion: "organized",
-    status: "completed",
-  });
-
-  await consumeMinutes(user, neededMinutes, id);
 
   return json({
-    id,
-    faithfulText,
-    organizedText,
-    durationSeconds,
+    id: result.id,
+    faithfulText: result.faithfulText,
+    organizedText: result.organizedText,
+    durationSeconds: result.durationSeconds,
   });
 }
