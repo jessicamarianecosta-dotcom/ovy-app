@@ -10,22 +10,32 @@
 
   const style = document.createElement("style");
   style.textContent = `
+    .ovy-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-sizing: border-box;
+      width: 280px;
+      max-width: 90vw;
+      margin: 6px 0 0;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
     .ovy-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       width: 26px;
       height: 26px;
-      margin-left: 6px;
       border-radius: 999px;
       background: #111B36;
       color: #fff;
       border: none;
       cursor: pointer;
       font-size: 13px;
-      vertical-align: middle;
       flex-shrink: 0;
-      z-index: 2;
     }
     .ovy-btn:hover { background: #1b2a52; }
     .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; opacity: 0.85; }
@@ -38,6 +48,11 @@
       display: block;
       pointer-events: none;
     }
+    .ovy-label {
+      font-size: 12px;
+      color: #111B36;
+      font-weight: 600;
+    }
     .ovy-result {
       display: block;
       box-sizing: border-box;
@@ -46,7 +61,8 @@
       margin: 6px 0 0;
       padding: 8px 10px;
       border-radius: 10px;
-      background: rgba(17,27,54,0.06);
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
       color: #111B36;
       font-size: 13px;
       line-height: 1.4;
@@ -54,7 +70,7 @@
       word-break: normal;
       overflow-wrap: break-word;
     }
-    .ovy-result.ovy-error { color: #b91c1c; background: rgba(185,28,28,0.08); }
+    .ovy-result.ovy-error { color: #b91c1c; }
   `;
   document.documentElement.appendChild(style);
 
@@ -198,9 +214,14 @@
 
   function attachButtonUnsafe(playButton) {
     // O container da mensagem é onde procuramos o botão de "pausar"
-    // depois, e onde penduramos o resultado da transcrição.
+    // depois, e onde penduramos a linha do Ovy e o resultado da
+    // transcrição — como um bloco próprio embaixo da bolha, não grudado
+    // no player (que é uma fileira estreita e fica cortado ali).
     const container =
       playButton.closest("[data-id]") || playButton.closest('div[role="row"]') || playButton.parentElement;
+
+    const row = document.createElement("div");
+    row.className = "ovy-row";
 
     const button = document.createElement("button");
     button.className = "ovy-btn";
@@ -210,6 +231,13 @@
     logo.src = chrome.runtime.getURL("icons/icon32.png");
     logo.alt = "Ovy";
     button.appendChild(logo);
+
+    const label = document.createElement("span");
+    label.className = "ovy-label";
+    label.textContent = "Transcrever com Ovy";
+
+    row.appendChild(button);
+    row.appendChild(label);
 
     const resultEl = document.createElement("div");
     resultEl.className = "ovy-result";
@@ -221,13 +249,9 @@
       transcribe(playButton, container || document, button, resultEl);
     });
 
-    const anchor = playButton.closest("button") || playButton;
-    anchor.insertAdjacentElement("afterend", button);
-
-    // O resultado vai no final do container da mensagem (bloco inteiro),
-    // não logo depois do botão — senão ele fica espremido na fileira
-    // estreita do player de áudio e o texto quebra palavra por palavra.
-    (container || anchor.parentElement || document.body).appendChild(resultEl);
+    const anchor = container || playButton.parentElement || document.body;
+    anchor.appendChild(row);
+    anchor.appendChild(resultEl);
   }
 
   function scan() {
