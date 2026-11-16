@@ -16,27 +16,38 @@ nada de "ficar ouvindo" a página o tempo todo.
 ## Como usar
 
 1. Abra **web.whatsapp.com** normalmente.
-2. Em qualquer mensagem de áudio, vai aparecer um botão 📝 logo ao lado do
+2. **Importante:** clique uma vez no ícone do Ovy na barra de extensões
+   (o popup abre e pode fechar na hora). Isso precisa ser feito **uma vez
+   por aba** — é uma exigência de segurança do próprio Chrome antes de
+   liberar a captura de áudio dessa aba.
+3. Em qualquer mensagem de áudio, vai aparecer um botão 📝 logo ao lado do
    player. Clique nele.
-3. O WhatsApp Web usa um player customizado (sem tag `<audio>` comum), então
-   a extensão precisa simular o play pra conseguir capturar o arquivo —
-   isso causa um **toquinho bem rápido de som** antes de pausar
-   automaticamente. Não tem como evitar isso 100% com a forma como o
-   WhatsApp Web funciona.
-4. O texto transcrito e organizado aparece logo abaixo da mensagem.
+4. A extensão aperta o play da mensagem automaticamente e grava o áudio
+   que sai da aba (funciona mesmo com o volume baixo — não precisa ouvir
+   pra transcrever). Ela para de gravar sozinha assim que a mensagem
+   termina de tocar.
+5. O texto transcrito e organizado aparece logo abaixo da mensagem.
+
+## Como funciona por baixo dos panos
+
+O WhatsApp Web usa um player de áudio totalmente customizado — sem tag
+`<audio>` — e decodifica o som dentro de um Service Worker, invisível pra
+qualquer script injetado na página. Por isso a extensão não tenta "espiar"
+o código deles: ela usa a permissão `tabCapture` do Chrome pra gravar o
+áudio que já sai pronto da aba (depois de qualquer descriptografia/
+decodificação interna), processando isso num documento `offscreen` (exigido
+pelo Manifest V3) e enviando o resultado pro Ovy transcrever.
 
 ## Limitações conhecidas
 
 - Funciona só no **web.whatsapp.com** — não em outros sites, nem no
   WhatsApp Desktop (app nativo) ou no celular (pra isso, use o app Android
   com "compartilhar áudio").
+- Precisa clicar no ícone do Ovy uma vez por aba antes de usar o botão 📝
+  (exigência do Chrome, não dá pra pular).
 - Como o WhatsApp Web muda a estrutura da página de vez em quando, o botão
   pode parar de aparecer depois de uma atualização deles — avise se isso
   acontecer, pra eu ajustar.
-- A captura depende de interceptar uma função interna do navegador
-  (`AudioContext.decodeAudioData`) no momento em que o WhatsApp decodifica
-  o áudio — se eles mudarem a forma de tocar o áudio, pode parar de
-  funcionar e precisar de ajuste.
 - Mesmo limite de 2 minutos por áudio e de minutos do seu plano que vale
   pra qualquer transcrição no Ovy.
 - Não publicada na Chrome Web Store; funciona só em modo desenvolvedor,

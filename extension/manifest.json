@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ovy — Transcrever WhatsApp Web",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Adiciona um botão \"Transcrever\" em cada áudio do WhatsApp Web. Transcreve só a mensagem que você clicar, sem ficar ouvindo nada.",
   "icons": {
     "16": "icons/icon16.png",
@@ -17,7 +17,7 @@
       "48": "icons/icon48.png"
     }
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabCapture", "offscreen"],
   "host_permissions": ["https://ovy-app.vercel.app/*"],
   "web_accessible_resources": [
     {
@@ -25,13 +25,10 @@
       "matches": ["https://web.whatsapp.com/*"]
     }
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
-    {
-      "matches": ["https://web.whatsapp.com/*"],
-      "js": ["page-hook.js"],
-      "world": "MAIN",
-      "run_at": "document_start"
-    },
     {
       "matches": ["https://web.whatsapp.com/*"],
       "js": ["content.js"],

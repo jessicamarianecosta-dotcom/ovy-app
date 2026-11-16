@@ -6,6 +6,7 @@
   const PROCESSED_ATTR = "data-ovy-processed";
   const PLAY_LABEL_RE = /reproduzir (mensagem|recado) de voz|play voice message/i;
   const PAUSE_LABEL_RE = /pausar (mensagem|recado) de voz|pause voice message/i;
+  const MAX_RECORD_MS = 20000;
 
   const style = document.createElement("style");
   style.textContent = `
@@ -57,21 +58,6 @@
   `;
   document.documentElement.appendChild(style);
 
-  // O hook em page-hook.js (mundo principal da página) avisa aqui, no
-  // mundo isolado da extensão, toda vez que algum buffer "candidato" a
-  // áudio passa por decodeAudioData, fetch ou crypto.subtle.decrypt. O
-  // WhatsApp decripta um monte de coisa pequena o tempo todo (texto,
-  // metadados), então guardamos os últimos candidatos com tamanho e hora,
-  // e escolhemos o maior que apareceu depois do clique no play.
-  const MIN_AUDIO_BYTES = 800;
-  const capturedBuffers = [];
-  window.addEventListener("__ovyAudioBuffer", (event) => {
-    const { buffer, source, size } = event.detail || {};
-    if (!buffer || size < MIN_AUDIO_BYTES) return;
-    capturedBuffers.push({ buffer, source, size, timestamp: Date.now() });
-    if (capturedBuffers.length > 25) capturedBuffers.shift();
-  });
-
   function getApiKey() {
     return new Promise((resolve) => {
       if (!isExtensionContextValid()) return resolve(null);
@@ -106,29 +92,45 @@
     return true;
   }
 
-  async function captureAudioBuffer(playButton, container) {
-    const clickTime = Date.now();
+  // Grava o áudio de SAÍDA da aba (depois de qualquer descriptografia/
+  // decodificação interna do WhatsApp) via tabCapture, em vez de tentar
+  // espiar por dentro do código deles — mais lento, mas de verdade
+  // confiável, porque não depende de adivinhar como eles tocam o áudio.
+  async function captureAudioViaTabCapture(playButton, container) {
+    const recordPromise = chrome.runtime.sendMessage({
+      type: "RECORD_TAB_AUDIO",
+      maxMs: MAX_RECORD_MS,
+    });
+
+    // Pequena espera pro gravador já estar de pé antes de apertar o play,
+    // senão perde o começo do áudio.
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     clickElement(playButton);
 
-    // Dá tempo do WhatsApp decodificar/descriptografar e dispara um
-    // "pausar" assim que achar um candidato razoável, pra cortar o som o
-    // mais rápido possível.
+    // Para de gravar assim que detectar que a mensagem voltou a mostrar
+    // "reproduzir" (ou seja, já tocou inteira) — sem isso, espera o tempo
+    // máximo sempre.
     const start = Date.now();
-    let best = null;
-    while (Date.now() - start < 15000) {
-      const candidates = capturedBuffers.filter((c) => c.timestamp >= clickTime - 200);
-      if (candidates.length > 0) {
-        best = candidates.reduce((a, b) => (b.size > a.size ? b : a));
+    let sawPause = false;
+    while (Date.now() - start < MAX_RECORD_MS) {
+      const pauseEl = findPauseElement(container) || findPauseElement(document);
+      if (pauseEl) {
+        sawPause = true;
+      } else if (sawPause) {
         break;
       }
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    const pauseButton = findPauseElement(container) || findPauseElement(document);
-    clickElement(pauseButton);
+    try {
+      await chrome.runtime.sendMessage({ type: "STOP_RECORDING_EARLY" });
+    } catch {
+      // se a extensão recarregou nesse meio tempo, o timeout do lado do
+      // offscreen ainda garante que a gravação para sozinha.
+    }
 
-    return best?.buffer || null;
+    return recordPromise;
   }
 
   async function transcribe(playButton, container, button, resultEl) {
@@ -142,24 +144,24 @@
     showResult(resultEl, "Transcrevendo…", false);
 
     try {
-      const buffer = await captureAudioBuffer(playButton, container);
-      if (!buffer) {
-        throw new Error("Não consegui capturar o áudio desta mensagem. Tente de novo.");
+      const response = await captureAudioViaTabCapture(playButton, container);
+      if (!response?.ok) {
+        throw new Error(response?.error || "Não consegui capturar o áudio desta mensagem.");
       }
 
-      const audioBlob = new Blob([buffer], { type: "audio/ogg" });
+      const audioBlob = await (await fetch(response.dataUrl)).blob();
       const formData = new FormData();
-      formData.append("audio", audioBlob, "whatsapp-audio.ogg");
+      formData.append("audio", audioBlob, "whatsapp-audio.webm");
 
-      const response = await fetch(`${API_BASE}/api/transcribe`, {
+      const uploadResponse = await fetch(`${API_BASE}/api/transcribe`, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}` },
         body: formData,
       });
-      const data = await response.json().catch(() => ({}));
+      const data = await uploadResponse.json().catch(() => ({}));
 
-      if (!response.ok) {
-        throw new Error(data.error || `Falha ao transcrever (HTTP ${response.status}).`);
+      if (!uploadResponse.ok) {
+        throw new Error(data.error || `Falha ao transcrever (HTTP ${uploadResponse.status}).`);
       }
 
       const text = data.organizedText || data.faithfulText || "";
