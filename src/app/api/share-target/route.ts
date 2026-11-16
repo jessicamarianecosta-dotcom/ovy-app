@@ -33,5 +33,5 @@ export async function POST(request: Request) {
     return NextResponse.redirect(url, 303);
   }
 
-  return NextResponse.redirect(new URL(`/historico/${result.id}`, request.url), 303);
+  return NextResponse.redirect(new URL(`/compartilhado/${result.id}`, request.url), 303);
 }
