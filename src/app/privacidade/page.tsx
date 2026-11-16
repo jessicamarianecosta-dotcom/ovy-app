@@ -14,9 +14,9 @@ export default function PrivacidadePage() {
 
         <h2 className="mt-8 text-lg font-semibold text-ovy-navy">1. O que coletamos</h2>
         <p className="mt-2">
-          Coletamos seu nome e e-mail (via login com Google ou link mágico por
-          e-mail), o áudio que você envia ou grava para transcrição, e o texto
-          resultante da transcrição.
+          Coletamos seu e-mail e telefone (no cadastro com senha ou por link
+          mágico por e-mail), o áudio que você envia ou grava para
+          transcrição, e o texto resultante da transcrição.
         </p>
 
         <h2 className="mt-6 text-lg font-semibold text-ovy-navy">2. Como usamos seus dados</h2>
@@ -30,7 +30,7 @@ export default function PrivacidadePage() {
         <h2 className="mt-6 text-lg font-semibold text-ovy-navy">3. Compartilhamento com terceiros</h2>
         <p className="mt-2">
           Usamos provedores para operar o serviço: processamento de
-          transcrição (Replicate), autenticação (Google, Resend), hospedagem
+          transcrição (Groq), autenticação por e-mail (Resend), hospedagem
           (Vercel), banco de dados (Turso) e pagamentos (Stripe). Esses
           provedores processam dados estritamente para viabilizar essas
           funções.

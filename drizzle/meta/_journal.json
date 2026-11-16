@@ -15,6 +15,13 @@
       "when": 1794757321376,
       "tag": "0001_icy_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794789203020,
+      "tag": "0002_superb_jane_foster",
+      "breakpoints": true
     }
   ]
 }
