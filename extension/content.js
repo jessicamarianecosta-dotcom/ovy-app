@@ -10,33 +10,23 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    .ovy-row {
-      position: fixed;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-sizing: border-box;
-      width: 280px;
-      max-width: 90vw;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-      z-index: 2147483000;
-    }
     .ovy-btn {
+      position: fixed;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border-radius: 999px;
       background: #111B36;
       color: #fff;
-      border: none;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
       cursor: pointer;
       font-size: 13px;
       flex-shrink: 0;
+      z-index: 2147483000;
+      padding: 0;
     }
     .ovy-btn:hover { background: #1b2a52; }
     .ovy-btn.ovy-loading { background: #8B5CF6; cursor: wait; opacity: 0.85; }
@@ -48,11 +38,6 @@
       object-fit: cover;
       display: block;
       pointer-events: none;
-    }
-    .ovy-label {
-      font-size: 12px;
-      color: #111B36;
-      font-weight: 600;
     }
     .ovy-result {
       position: fixed;
@@ -259,9 +244,6 @@
     const container = findMessageContainer(playButton);
     const outgoing = isOutgoingMessage(container || playButton);
 
-    const row = document.createElement("div");
-    row.className = "ovy-row";
-
     const button = document.createElement("button");
     button.className = "ovy-btn";
     button.type = "button";
@@ -271,18 +253,11 @@
     logo.alt = "Ovy";
     button.appendChild(logo);
 
-    const label = document.createElement("span");
-    label.className = "ovy-label";
-    label.textContent = "Transcrever com Ovy";
-
-    row.appendChild(button);
-    row.appendChild(label);
-
     const resultEl = document.createElement("div");
     resultEl.className = "ovy-result";
     resultEl.style.display = "none";
 
-    document.body.appendChild(row);
+    document.body.appendChild(button);
     document.body.appendChild(resultEl);
 
     const anchorEl = container || playButton;
@@ -293,23 +268,32 @@
         return;
       }
       const rect = anchorEl.getBoundingClientRect();
-      const top = rect.bottom + 4;
-      row.style.top = `${top}px`;
+      const top = rect.bottom - 14;
+      // O botão fica só a logo, coladinho na pontinha da bolha — sem
+      // caixa nem texto; a caixa de resultado só aparece quando a
+      // transcrição estiver pronta (ou der erro).
       if (outgoing) {
-        row.style.left = "";
-        row.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
+        button.style.left = "";
+        button.style.right = `${Math.max(8, window.innerWidth - rect.right + 4)}px`;
       } else {
-        row.style.right = "";
-        row.style.left = `${Math.max(8, rect.left)}px`;
+        button.style.right = "";
+        button.style.left = `${Math.max(8, rect.right - 32)}px`;
       }
-      const rowHeight = row.offsetHeight || 38;
-      resultEl.style.top = `${top + rowHeight + 4}px`;
-      resultEl.style.left = row.style.left;
-      resultEl.style.right = row.style.right;
+      button.style.top = `${top}px`;
+
+      const resultTop = rect.bottom + 6;
+      resultEl.style.top = `${resultTop}px`;
+      if (outgoing) {
+        resultEl.style.left = "";
+        resultEl.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
+      } else {
+        resultEl.style.right = "";
+        resultEl.style.left = `${Math.max(8, rect.left)}px`;
+      }
     }
 
     function cleanup() {
-      row.remove();
+      button.remove();
       resultEl.remove();
       clearInterval(watcher);
       window.removeEventListener("scroll", reposition, true);
