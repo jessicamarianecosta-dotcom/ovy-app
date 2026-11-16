@@ -11,17 +11,18 @@
   const style = document.createElement("style");
   style.textContent = `
     .ovy-row {
+      position: fixed;
       display: flex;
       align-items: center;
       gap: 8px;
       box-sizing: border-box;
       width: 280px;
       max-width: 90vw;
-      margin: 6px 0 0;
       padding: 6px 10px;
       border-radius: 10px;
       background: #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      z-index: 2147483000;
     }
     .ovy-btn {
       display: inline-flex;
@@ -54,11 +55,11 @@
       font-weight: 600;
     }
     .ovy-result {
+      position: fixed;
       display: block;
       box-sizing: border-box;
       width: 280px;
       max-width: 90vw;
-      margin: 6px 0 0;
       padding: 8px 10px;
       border-radius: 10px;
       background: #fff;
@@ -69,6 +70,7 @@
       white-space: normal;
       word-break: normal;
       overflow-wrap: break-word;
+      z-index: 2147483000;
     }
     .ovy-result.ovy-error { color: #b91c1c; }
   `;
@@ -246,18 +248,19 @@
   }
 
   function attachButtonUnsafe(playButton) {
-    // O container da mensagem é onde procuramos o botão de "pausar"
-    // depois, e onde penduramos a linha do Ovy e o resultado da
-    // transcrição — como um bloco próprio embaixo da bolha, não grudado
-    // no player (que é uma fileira estreita e fica cortado ali).
+    // O WhatsApp Web virtualiza a lista de mensagens (às vezes com
+    // flex-direction invertido internamente), então anexar a caixinha
+    // como filha do DOM da mensagem é imprevisível — ela pode aparecer
+    // acima, embaixo ou longe do lugar certo dependendo da estrutura
+    // interna deles. Em vez disso, ancoramos pela posição REAL na tela
+    // (getBoundingClientRect) da bolha da mensagem, com position:fixed,
+    // e recalculamos a cada scroll/resize — assim funciona não importa
+    // como o WhatsApp organiza o DOM por dentro.
     const container = findMessageContainer(playButton);
-
     const outgoing = isOutgoingMessage(container || playButton);
-    const sideStyle = outgoing ? "margin-left: auto;" : "margin-right: auto;";
 
     const row = document.createElement("div");
     row.className = "ovy-row";
-    row.style.cssText = sideStyle;
 
     const button = document.createElement("button");
     button.className = "ovy-btn";
@@ -277,17 +280,56 @@
 
     const resultEl = document.createElement("div");
     resultEl.className = "ovy-result";
-    resultEl.style.cssText = `${sideStyle} display: none;`;
+    resultEl.style.display = "none";
+
+    document.body.appendChild(row);
+    document.body.appendChild(resultEl);
+
+    const anchorEl = container || playButton;
+
+    function reposition() {
+      if (!document.body.contains(anchorEl) || !document.body.contains(playButton)) {
+        cleanup();
+        return;
+      }
+      const rect = anchorEl.getBoundingClientRect();
+      const top = rect.bottom + 4;
+      row.style.top = `${top}px`;
+      if (outgoing) {
+        row.style.left = "";
+        row.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
+      } else {
+        row.style.right = "";
+        row.style.left = `${Math.max(8, rect.left)}px`;
+      }
+      const rowHeight = row.offsetHeight || 38;
+      resultEl.style.top = `${top + rowHeight + 4}px`;
+      resultEl.style.left = row.style.left;
+      resultEl.style.right = row.style.right;
+    }
+
+    function cleanup() {
+      row.remove();
+      resultEl.remove();
+      clearInterval(watcher);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    }
+
+    // Scroll dentro da área de mensagens dispara evento de scroll (captura
+    // pega qualquer ancestral rolável); o intervalo cobre mudanças de
+    // layout do WhatsApp que não disparam scroll/resize (nova mensagem
+    // chegando, virtualização recalculando alturas).
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    const watcher = setInterval(reposition, 400);
+    reposition();
 
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      transcribe(playButton, container || document, button, resultEl);
+      transcribe(playButton, container || document, button, resultEl).finally(reposition);
     });
-
-    const anchor = container || playButton.parentElement || document.body;
-    anchor.appendChild(row);
-    anchor.appendChild(resultEl);
   }
 
   function scan() {
