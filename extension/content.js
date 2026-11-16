@@ -108,6 +108,21 @@
     return true;
   }
 
+  // Mensagens enviadas por mim ficam alinhadas à direita (classe
+  // "message-out"), as recebidas à esquerda ("message-in") — alinha a
+  // caixinha do Ovy do mesmo lado da bolha do áudio.
+  function isOutgoingMessage(el) {
+    let node = el;
+    while (node && node !== document.body) {
+      if (node.classList) {
+        if (node.classList.contains("message-out")) return true;
+        if (node.classList.contains("message-in")) return false;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  }
+
   // Grava o áudio de SAÍDA da aba (depois de qualquer descriptografia/
   // decodificação interna do WhatsApp) via tabCapture, em vez de tentar
   // espiar por dentro do código deles — mais lento, mas de verdade
@@ -220,8 +235,12 @@
     const container =
       playButton.closest("[data-id]") || playButton.closest('div[role="row"]') || playButton.parentElement;
 
+    const outgoing = isOutgoingMessage(container || playButton);
+    const sideStyle = outgoing ? "margin-left: auto;" : "margin-right: auto;";
+
     const row = document.createElement("div");
     row.className = "ovy-row";
+    row.style.cssText = sideStyle;
 
     const button = document.createElement("button");
     button.className = "ovy-btn";
@@ -241,7 +260,7 @@
 
     const resultEl = document.createElement("div");
     resultEl.className = "ovy-result";
-    resultEl.style.display = "none";
+    resultEl.style.cssText = `${sideStyle} display: none;`;
 
     button.addEventListener("click", (event) => {
       event.preventDefault();
