@@ -227,13 +227,30 @@
     }
   }
 
+  // O WhatsApp Web usa uma grade ARIA (role="grid" > role="row") com UMA
+  // linha por mensagem — esse é o único jeito confiável de achar "o bloco
+  // dessa mensagem específica". Um `.closest("[data-id]")` sem limite de
+  // distância às vezes acha um ancestral comum a várias mensagens (ex: o
+  // painel da conversa inteira), fazendo todas as caixinhas caírem no
+  // mesmo lugar — por isso role="row" vem primeiro, e o fallback por
+  // data-id só sobe um número limitado de níveis.
+  function findMessageContainer(playButton) {
+    const row = playButton.closest('div[role="row"]');
+    if (row) return row;
+    let node = playButton.parentElement;
+    for (let i = 0; i < 8 && node; i++) {
+      if (node.hasAttribute && node.hasAttribute("data-id")) return node;
+      node = node.parentElement;
+    }
+    return playButton.parentElement;
+  }
+
   function attachButtonUnsafe(playButton) {
     // O container da mensagem é onde procuramos o botão de "pausar"
     // depois, e onde penduramos a linha do Ovy e o resultado da
     // transcrição — como um bloco próprio embaixo da bolha, não grudado
     // no player (que é uma fileira estreita e fica cortado ali).
-    const container =
-      playButton.closest("[data-id]") || playButton.closest('div[role="row"]') || playButton.parentElement;
+    const container = findMessageContainer(playButton);
 
     const outgoing = isOutgoingMessage(container || playButton);
     const sideStyle = outgoing ? "margin-left: auto;" : "margin-right: auto;";
