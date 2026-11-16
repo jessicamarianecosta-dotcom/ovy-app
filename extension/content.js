@@ -218,6 +218,10 @@
     resultEl.textContent = text;
     resultEl.classList.toggle("ovy-error", Boolean(isError));
     resultEl.style.display = "block";
+    // Reposiciona já com o conteúdo novo — o texto pode ser mais alto ou
+    // mais baixo que a "Transcrevendo…" anterior, e precisa decidir de
+    // novo se cabe embaixo da bolha ou se é melhor abrir pra cima.
+    resultEl.__ovyReposition?.();
   }
 
   function attachButton(playButton) {
@@ -301,7 +305,28 @@
         resultEl.style.right = "";
         resultEl.style.left = `${Math.max(8, rect.left)}px`;
       }
-      resultEl.style.top = `${rect.bottom + 6}px`;
+
+      // Se não tiver espaço embaixo (mensagem perto do rodapé, atrás da
+      // barra de digitar), abre a caixa de resultado pra CIMA da bolha em
+      // vez de para baixo — e limita a altura com rolagem própria, pra
+      // nunca passar da tela nem em transcrições bem longas.
+      if (resultEl.style.display !== "none") {
+        resultEl.style.maxHeight = "none";
+        resultEl.style.bottom = "";
+        resultEl.style.top = "0px"; // mede a altura natural sem cortar embaixo
+        const naturalHeight = resultEl.scrollHeight;
+        const spaceBelow = window.innerHeight - rect.bottom - 10;
+        const spaceAbove = rect.top - 10;
+        if (naturalHeight <= spaceBelow || spaceBelow >= spaceAbove) {
+          resultEl.style.top = `${rect.bottom + 6}px`;
+          resultEl.style.maxHeight = `${Math.max(80, spaceBelow)}px`;
+        } else {
+          resultEl.style.top = "";
+          resultEl.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+          resultEl.style.maxHeight = `${Math.max(80, spaceAbove)}px`;
+        }
+        resultEl.style.overflowY = "auto";
+      }
     }
 
     function cleanup() {
@@ -315,6 +340,7 @@
     window.addEventListener("scroll", reposition, true);
     window.addEventListener("resize", reposition);
     const watcher = setInterval(reposition, 400);
+    resultEl.__ovyReposition = reposition;
     reposition();
 
     button.addEventListener("click", (event) => {
