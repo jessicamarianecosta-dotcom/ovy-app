@@ -131,6 +131,7 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
         transcriptionId={result.id}
         faithfulText={result.faithfulText}
         organizedText={result.organizedText}
+        onClose={() => setResult(null)}
         onDiscard={() => setResult(null)}
       />
     );

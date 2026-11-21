@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { requireUser } from "@/lib/current-user";
 import { db } from "@/db";
 import { transcriptions } from "@/db/schema";
+import { SyncInfoTooltip } from "@/components/sync-info-tooltip";
 
 export default async function HistoricoPage() {
   const user = await requireUser();
@@ -16,8 +17,9 @@ export default async function HistoricoPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold">Histórico</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        Suas transcrições salvas, sincronizadas em todos os dispositivos.
+      <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
+        Histórico sincronizado entre seus dispositivos.
+        <SyncInfoTooltip />
       </p>
 
       {rows.length === 0 ? (

@@ -2,7 +2,7 @@ export function startOfNextMonth(from: Date = new Date()): Date {
   return new Date(from.getFullYear(), from.getMonth() + 1, 1);
 }
 
-export const FREE_PLAN_MINUTES = 30;
+export const FREE_PLAN_MINUTES = 20;
 export const PRO_PLAN_MINUTES = 500;
 export const PRO_PLAN_PRICE_BRL = 17;
 export const MAX_TRANSCRIPTION_SECONDS = 2 * 60;
@@ -12,7 +12,7 @@ export function planMinutes(plan: "free" | "pro"): number {
 }
 
 // Pacotes avulsos de minutos (compra única, não é assinatura) — pra quem
-// não quer o Pro mas de vez em quando precisa de mais que os 30 min grátis.
+// não quer o Pro mas de vez em quando precisa de mais que os minutos grátis.
 export type ExtraPack = {
   id: "pack_p" | "pack_m" | "pack_g";
   label: string;

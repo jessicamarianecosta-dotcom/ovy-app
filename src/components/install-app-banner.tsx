@@ -16,10 +16,14 @@ export function InstallAppBanner() {
   const [dismissed, setDismissed] = useState(true);
   const [showIosHint, setShowIosHint] = useState(false);
 
+  // Padrão intencional: renderiza com os defaults seguros pro SSR (sem
+  // `window`) e só calcula o valor real depois de montar no cliente, pra
+  // não gerar mismatch de hidratação.
   useEffect(() => {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsStandalone(standalone);
     setDismissed(sessionStorage.getItem(DISMISS_KEY) === "1");
 

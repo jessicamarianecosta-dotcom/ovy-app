@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, Save, Trash2, FileDown } from "lucide-react";
+import { Copy, Save, Trash2, FileDown, X } from "lucide-react";
 
 type Version = "faithful" | "organized";
 
@@ -14,6 +14,7 @@ export function TranscriptionEditor({
   editedText,
   initialVersion = "organized",
   onDiscard,
+  onClose,
   readOnlyTitle,
 }: {
   transcriptionId: string;
@@ -22,6 +23,7 @@ export function TranscriptionEditor({
   editedText?: string | null;
   initialVersion?: Version;
   onDiscard?: () => void;
+  onClose?: () => void;
   readOnlyTitle?: string;
 }) {
   const router = useRouter();
@@ -83,9 +85,21 @@ export function TranscriptionEditor({
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+    <div className="relative rounded-2xl border border-neutral-200 bg-white p-6">
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar"
+          title="Fechar"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+
       {readOnlyTitle && (
-        <h2 className="mb-4 text-lg font-semibold">{readOnlyTitle}</h2>
+        <h2 className="mb-4 pr-10 text-lg font-semibold">{readOnlyTitle}</h2>
       )}
 
       <div className="flex gap-2">
