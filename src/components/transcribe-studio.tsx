@@ -23,9 +23,22 @@ function readDurationFromBrowser(file: File): Promise<number | null> {
     const cleanup = () => URL.revokeObjectURL(url);
     audio.preload = "metadata";
     audio.onloadedmetadata = () => {
-      const duration = Number.isFinite(audio.duration) ? audio.duration : null;
+      // Arquivos .webm sem duração gravada no container (comum em áudios
+      // gerados por MediaRecorder, inclusive de outros apps) fazem o Chrome
+      // reportar Infinity até forçar um seek pro fim — é o workaround oficial
+      // do próprio Chromium pra esse caso.
+      if (!Number.isFinite(audio.duration)) {
+        audio.currentTime = 1e101;
+        audio.ontimeupdate = () => {
+          audio.ontimeupdate = null;
+          const duration = Number.isFinite(audio.duration) ? audio.duration : null;
+          cleanup();
+          resolve(duration);
+        };
+        return;
+      }
       cleanup();
-      resolve(duration);
+      resolve(audio.duration);
     };
     audio.onerror = () => {
       cleanup();
@@ -44,6 +57,12 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // Timestamp de início da gravação. Blobs do MediaRecorder costumam não
+  // guardar a duração no container do .webm, o que fazia o navegador às
+  // vezes "não conseguir determinar a duração" (função de Infinity/seek nem
+  // sempre resolve a tempo). Medir pelo relógio é 100% confiável e não
+  // depende de nenhum comportamento de container.
+  const recordingStartedAtRef = useRef<number | null>(null);
 
   async function startRecording() {
     try {
@@ -57,7 +76,14 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
         const file = new File([blob], `gravacao-${Date.now()}.webm`, {
           type: "audio/webm",
         });
-        void submitAudio(file);
+        const recordedSeconds = recordingStartedAtRef.current
+          ? (Date.now() - recordingStartedAtRef.current) / 1000
+          : null;
+        recordingStartedAtRef.current = null;
+        void submitAudio(file, recordedSeconds ?? undefined);
+      };
+      recorder.onstart = () => {
+        recordingStartedAtRef.current = Date.now();
       };
       mediaRecorderRef.current = recorder;
       recorder.start();
@@ -91,7 +117,7 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
     }
   }
 
-  async function submitAudio(file: File) {
+  async function submitAudio(file: File, knownDurationSeconds?: number) {
     if (minutesLeft <= 0) {
       toast.error("Seus minutos acabaram neste ciclo. Faça upgrade no plano Pro.");
       return;
@@ -99,7 +125,13 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
     setIsProcessing(true);
     setResult(null);
     try {
-      const browserDuration = await readDurationFromBrowser(file);
+      // Pra gravações feitas aqui mesmo já temos a duração real (medida pelo
+      // relógio no startRecording/onstop) — só cai no leitor de metadata do
+      // <audio> pra arquivos enviados por upload/drag-and-drop.
+      const browserDuration =
+        knownDurationSeconds && knownDurationSeconds > 0
+          ? knownDurationSeconds
+          : await readDurationFromBrowser(file);
 
       const formData = new FormData();
       formData.append("audio", file);
