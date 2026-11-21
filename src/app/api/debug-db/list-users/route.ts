@@ -6,7 +6,7 @@ import { users } from "@/db/schema";
 // contas certas antes de liberar o Pro manualmente. Removido em seguida.
 export async function POST(request: Request) {
   const secret = request.headers.get("x-debug-secret");
-  if (!secret || secret !== process.env.AUTH_SECRET) {
+  if (!secret || secret !== process.env.DEBUG_ROUTE_SECRET) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
