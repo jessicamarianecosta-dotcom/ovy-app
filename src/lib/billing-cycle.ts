@@ -2,13 +2,20 @@ export function startOfNextMonth(from: Date = new Date()): Date {
   return new Date(from.getFullYear(), from.getMonth() + 1, 1);
 }
 
+// Valores usados apenas como semente inicial da tabela app_settings (ver
+// src/lib/settings.ts) e como fallback caso o banco ainda não tenha sido
+// inicializado. O valor que realmente vale em runtime é o de app_settings,
+// editável pelo admin em /admin.
 export const FREE_PLAN_MINUTES = 30;
 export const PRO_PLAN_MINUTES = 500;
 export const PRO_PLAN_PRICE_BRL = 17;
 export const MAX_TRANSCRIPTION_SECONDS = 2 * 60;
 
-export function planMinutes(plan: "free" | "pro"): number {
-  return plan === "pro" ? PRO_PLAN_MINUTES : FREE_PLAN_MINUTES;
+export function planMinutes(
+  plan: "free" | "pro",
+  settings: { freePlanMinutes: number; proPlanMinutes: number }
+): number {
+  return plan === "pro" ? settings.proPlanMinutes : settings.freePlanMinutes;
 }
 
 // Pacotes avulsos de minutos (compra única, não é assinatura) — pra quem

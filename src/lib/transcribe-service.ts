@@ -56,7 +56,7 @@ export async function transcribeAndSave(
 
   const freshUser = await resetCycleIfNeeded(user);
   const neededMinutes = Math.ceil(durationSeconds / 60);
-  if (remainingMinutes(freshUser) < neededMinutes) {
+  if ((await remainingMinutes(freshUser)) < neededMinutes) {
     return {
       ok: false,
       error: "Seus minutos acabaram neste ciclo. Faça upgrade para o plano Pro ou compre um pacote extra.",

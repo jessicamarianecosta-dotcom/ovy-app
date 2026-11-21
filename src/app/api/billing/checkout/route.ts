@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/current-user";
 import { getStripe } from "@/lib/stripe";
+import { getSettings } from "@/lib/settings";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -22,10 +23,14 @@ export async function POST() {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // O preço editável pelo admin (ver /admin) cria um novo Price no Stripe a
+  // cada alteração; até a primeira edição, usa o price_id fixo da env var.
+  const settings = await getSettings();
+  const priceId = settings.proPlanStripePriceId ?? process.env.STRIPE_PRICE_ID_PRO_MONTHLY;
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
-    line_items: [{ price: process.env.STRIPE_PRICE_ID_PRO_MONTHLY, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/plano?checkout=sucesso`,
     cancel_url: `${appUrl}/plano?checkout=cancelado`,
     metadata: { userId: user.id },

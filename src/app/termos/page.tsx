@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/landing/site-header";
 import { SiteFooter } from "@/components/landing/site-footer";
-import { FREE_PLAN_MINUTES, PRO_PLAN_MINUTES, PRO_PLAN_PRICE_BRL } from "@/lib/billing-cycle";
+import { getSettings } from "@/lib/settings";
 
 export const metadata = { title: "Termos de Uso" };
 
-export default function TermosPage() {
+export default async function TermosPage() {
+  const settings = await getSettings();
   return (
     <div className="flex-1">
       <SiteHeader />
@@ -16,8 +17,9 @@ export default function TermosPage() {
         <h2 className="mt-8 text-lg font-semibold text-ovy-navy">1. O serviço</h2>
         <p className="mt-2">
           O Ovy transforma áudios em texto. O plano gratuito inclui{" "}
-          {FREE_PLAN_MINUTES} minutos de transcrição por mês; o plano Pro
-          inclui {PRO_PLAN_MINUTES} minutos por mês por R$ {PRO_PLAN_PRICE_BRL}
+          {settings.freePlanMinutes} minutos de transcrição por mês; o plano Pro
+          inclui {settings.proPlanMinutes} minutos por mês por R${" "}
+          {settings.proPlanPriceBrl.toFixed(2).replace(".", ",")}
           /mês. Os limites e preços podem ser ajustados, e qualquer mudança
           será refletida nesta página e no painel do app.
         </p>

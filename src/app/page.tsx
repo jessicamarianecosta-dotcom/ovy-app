@@ -23,12 +23,8 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { ProductMockup, Waveform } from "@/components/landing/product-mockup";
 import { EditorMockup } from "@/components/landing/editor-mockup";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
-import {
-  FREE_PLAN_MINUTES,
-  PRO_PLAN_MINUTES,
-  PRO_PLAN_PRICE_BRL,
-  MAX_TRANSCRIPTION_SECONDS,
-} from "@/lib/billing-cycle";
+import { MAX_TRANSCRIPTION_SECONDS } from "@/lib/billing-cycle";
+import { getSettings } from "@/lib/settings";
 
 const FEATURES = [
   { icon: Mic, title: "Gravação pelo microfone", description: "Grave direto pelo navegador, sem instalar nada." },
@@ -52,7 +48,8 @@ const USE_CASES = [
   { icon: NotebookPen, title: "Uso pessoal", description: "Registre pensamentos e anotações rápidas por voz." },
 ];
 
-const FAQ_ITEMS = [
+function buildFaqItems(freePlanMinutes: number) {
+  return [
   {
     question: "O que é o Ovy?",
     answer:
@@ -104,7 +101,7 @@ const FAQ_ITEMS = [
   },
   {
     question: "Como funcionam os minutos gratuitos?",
-    answer: `O plano gratuito inclui ${FREE_PLAN_MINUTES} minutos de transcrição por mês, renovados automaticamente a cada ciclo.`,
+    answer: `O plano gratuito inclui ${freePlanMinutes} minutos de transcrição por mês, renovados automaticamente a cada ciclo.`,
   },
   {
     question: "Posso comprar minutos adicionais?",
@@ -114,9 +111,12 @@ const FAQ_ITEMS = [
     question: "Posso cancelar meu plano?",
     answer: "Sim, a assinatura do plano Pro pode ser cancelada a qualquer momento, sem multa.",
   },
-];
+  ];
+}
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const settings = await getSettings();
+  const faqItems = buildFaqItems(settings.freePlanMinutes);
   return (
     <div className="flex-1 bg-white">
       <SiteHeader />
@@ -155,7 +155,7 @@ export default function LandingPage() {
               </a>
             </div>
             <p className="mt-4 text-sm text-gray-500">
-              {FREE_PLAN_MINUTES} minutos gratuitos por mês. Sem cartão de crédito.
+              {settings.freePlanMinutes} minutos gratuitos por mês. Sem cartão de crédito.
             </p>
           </div>
 
@@ -324,7 +324,7 @@ export default function LandingPage() {
               <p className="mt-2 text-4xl font-bold text-ovy-navy">R$ 0</p>
               <ul className="mt-6 space-y-3 text-sm text-gray-600">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-violet-500" /> {FREE_PLAN_MINUTES} minutos por mês
+                  <Check className="h-4 w-4 text-violet-500" /> {settings.freePlanMinutes} minutos por mês
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-violet-500" /> Transcrição fiel e organizada
@@ -347,12 +347,12 @@ export default function LandingPage() {
             <div className="rounded-2xl border border-ovy-navy bg-ovy-navy p-7 text-white">
               <p className="text-sm font-medium text-violet-200">Pro</p>
               <p className="mt-2 text-4xl font-bold">
-                R$ {PRO_PLAN_PRICE_BRL}
+                R$ {settings.proPlanPriceBrl.toFixed(2).replace(".", ",")}
                 <span className="text-base font-medium text-violet-200">/mês</span>
               </p>
               <ul className="mt-6 space-y-3 text-sm text-violet-100">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4" /> {PRO_PLAN_MINUTES} minutos por mês
+                  <Check className="h-4 w-4" /> {settings.proPlanMinutes} minutos por mês
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4" /> Transcrição fiel e organizada
@@ -420,7 +420,7 @@ export default function LandingPage() {
             Perguntas frequentes
           </h2>
           <div className="mt-10">
-            <FaqAccordion items={FAQ_ITEMS} />
+            <FaqAccordion items={faqItems} />
           </div>
         </div>
       </section>

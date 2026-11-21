@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { startOfNextMonth } from "@/lib/billing-cycle";
 
 export const users = sqliteTable("users", {
@@ -108,3 +108,21 @@ export const minuteLedger = sqliteTable(
     userIdx: index("minute_ledger_user_idx").on(table.userId),
   })
 );
+
+// Linha única (id = "default") com os valores de minutos/preço que hoje
+// ficavam fixos em src/lib/billing-cycle.ts, agora editáveis pelo painel
+// admin sem precisar de deploy. A tabela é criada sob demanda (ver
+// src/lib/settings.ts) em vez de depender de uma migração manual.
+export const appSettings = sqliteTable("app_settings", {
+  id: text("id").primaryKey(),
+  freePlanMinutes: integer("free_plan_minutes").notNull(),
+  proPlanMinutes: integer("pro_plan_minutes").notNull(),
+  proPlanPriceBrl: real("pro_plan_price_brl").notNull(),
+  // Price (recorrente, mensal) ativo no Stripe para o plano Pro. Nulo até a
+  // primeira edição de preço pelo admin — nesse caso o checkout usa o
+  // STRIPE_PRICE_ID_PRO_MONTHLY da env var como fallback.
+  proPlanStripePriceId: text("pro_plan_stripe_price_id"),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});

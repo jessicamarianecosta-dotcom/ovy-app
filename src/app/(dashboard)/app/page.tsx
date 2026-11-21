@@ -5,7 +5,7 @@ import { TranscribeStudio } from "@/components/transcribe-studio";
 export default async function AppPage({ searchParams }: PageProps<"/app">) {
   const user = await getCurrentUser();
   const current = user ? await resetCycleIfNeeded(user) : null;
-  const minutesLeft = current ? remainingMinutes(current) : 0;
+  const minutesLeft = current ? await remainingMinutes(current) : 0;
   const params = await searchParams;
   const erro = typeof params.erro === "string" ? params.erro : null;
 

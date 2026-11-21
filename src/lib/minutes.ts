@@ -3,12 +3,14 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users, minuteLedger } from "@/db/schema";
 import { planMinutes, startOfNextMonth } from "@/lib/billing-cycle";
+import { getSettings } from "@/lib/settings";
 import type { InferSelectModel } from "drizzle-orm";
 
 type User = InferSelectModel<typeof users>;
 
-export function remainingMinutes(user: User): number {
-  const planTotal = planMinutes(user.plan as "free" | "pro");
+export async function remainingMinutes(user: User): Promise<number> {
+  const settings = await getSettings();
+  const planTotal = planMinutes(user.plan as "free" | "pro", settings);
   const planRemaining = Math.max(0, planTotal - user.minutesUsedThisCycle);
   return planRemaining + user.extraMinutesBalance;
 }
@@ -33,7 +35,8 @@ export async function consumeMinutes(
   minutesUsed: number,
   transcriptionId: string
 ) {
-  const planTotal = planMinutes(user.plan as "free" | "pro");
+  const settings = await getSettings();
+  const planTotal = planMinutes(user.plan as "free" | "pro", settings);
   const planRemaining = Math.max(0, planTotal - user.minutesUsedThisCycle);
   const fromPlan = Math.min(planRemaining, minutesUsed);
   const fromExtra = minutesUsed - fromPlan;
