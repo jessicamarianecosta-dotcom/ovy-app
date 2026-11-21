@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/current-user";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { setUserPlan } from "./actions";
 
 export default async function AdminPage() {
   const user = await requireUser();
@@ -36,6 +37,7 @@ export default async function AdminPage() {
               <th className="px-4 py-3">Minutos usados</th>
               <th className="px-4 py-3">Status pagamento</th>
               <th className="px-4 py-3">Criado em</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -46,6 +48,13 @@ export default async function AdminPage() {
                 <td className="px-4 py-3">{u.minutesUsedThisCycle}</td>
                 <td className="px-4 py-3">{u.stripeSubscriptionStatus ?? "—"}</td>
                 <td className="px-4 py-3">{u.createdAt.toLocaleDateString("pt-BR")}</td>
+                <td className="px-4 py-3">
+                  <form action={setUserPlan.bind(null, u.id, u.plan === "pro" ? "free" : "pro")}>
+                    <button type="submit" className="text-xs font-medium text-ovy-navy underline">
+                      {u.plan === "pro" ? "Tornar Free" : "Liberar Pro (grátis)"}
+                    </button>
+                  </form>
+                </td>
               </tr>
             ))}
           </tbody>

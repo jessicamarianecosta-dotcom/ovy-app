@@ -31,6 +31,34 @@ export function UpgradeButton() {
   );
 }
 
+export function BuyPackButton({ packId, label }: { packId: string; label: string }) {
+  const [loading, setLoading] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={async () => {
+        setLoading(true);
+        const response = await fetch("/api/billing/checkout-pack", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packId }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.url) {
+          toast.error(data.error ?? "Não foi possível continuar.");
+          setLoading(false);
+          return;
+        }
+        window.location.href = data.url;
+      }}
+      className="w-full rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-medium hover:bg-neutral-50 disabled:opacity-50"
+    >
+      {loading ? "Redirecionando…" : label}
+    </button>
+  );
+}
+
 export function ManageBillingButton() {
   const [loading, setLoading] = useState(false);
   return (

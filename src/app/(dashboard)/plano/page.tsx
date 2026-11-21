@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/current-user";
 import { resetCycleIfNeeded, remainingMinutes } from "@/lib/minutes";
-import { planMinutes, PRO_PLAN_MINUTES, PRO_PLAN_PRICE_BRL } from "@/lib/billing-cycle";
-import { UpgradeButton, ManageBillingButton } from "@/components/billing-buttons";
+import { planMinutes, PRO_PLAN_MINUTES, PRO_PLAN_PRICE_BRL, EXTRA_PACKS } from "@/lib/billing-cycle";
+import { UpgradeButton, ManageBillingButton, BuyPackButton } from "@/components/billing-buttons";
 
 export default async function PlanoPage() {
   const user = await resetCycleIfNeeded(await requireUser());
@@ -57,6 +57,27 @@ export default async function PlanoPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold">Pacotes avulsos de minutos</h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          Sem assinatura, sem mensalidade — compra única, os minutos ficam guardados pra quando precisar.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {EXTRA_PACKS.map((pack) => (
+            <div key={pack.id} className="flex flex-col rounded-2xl border border-neutral-200 bg-white p-5">
+              <p className="font-semibold">{pack.label}</p>
+              <p className="mt-1 text-2xl font-semibold">{pack.minutes} min</p>
+              <p className="mt-1 text-sm text-neutral-500">
+                R$ {pack.priceBRL.toFixed(2).replace(".", ",")}
+              </p>
+              <div className="mt-4">
+                <BuyPackButton packId={pack.id} label="Comprar" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
