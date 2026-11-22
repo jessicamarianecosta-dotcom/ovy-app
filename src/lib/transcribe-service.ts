@@ -32,7 +32,15 @@ export async function transcribeAndSave(
 
   let durationSeconds = 0;
   try {
-    const metadata = await parseBuffer(buffer, file.type || undefined);
+    // `duration: true` é obrigatório aqui: por padrão o music-metadata para
+    // de ler o Ogg na página 12 por economia, e em Ogg/Opus (formato dos
+    // áudios de voz do WhatsApp) a duração só existe na ÚLTIMA página do
+    // arquivo (granule position). Sem essa opção, todo áudio de voz do
+    // WhatsApp com mais de ~12 páginas (ou seja, praticamente qualquer um)
+    // cai com duration undefined — é isso que fazia o compartilhamento
+    // direto (sem navegador no meio, só o PWA share-target) falhar com
+    // "não foi possível determinar a duração do áudio".
+    const metadata = await parseBuffer(buffer, file.type || undefined, { duration: true });
     durationSeconds = Math.ceil(metadata.format.duration ?? 0);
   } catch {
     // music-metadata não reconheceu o container (comum em alguns áudios do
