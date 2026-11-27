@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ovy — Transcrever WhatsApp Web",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Adiciona um botão \"Transcrever\" em cada áudio do WhatsApp Web. Transcreve só a mensagem que você clicar, sem ficar ouvindo nada.",
   "icons": {
     "16": "icons/icon16.png",

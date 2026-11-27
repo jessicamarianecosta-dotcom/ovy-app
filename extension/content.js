@@ -58,6 +58,22 @@
       z-index: 2147483000;
     }
     .ovy-result.ovy-error { color: #b91c1c; }
+    .ovy-result-text { padding-right: 18px; }
+    .ovy-result-close {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+    }
+    .ovy-result-close:hover { color: #111B36; }
   `;
   document.documentElement.appendChild(style);
 
@@ -86,6 +102,18 @@
       if (PAUSE_LABEL_RE.test(el.getAttribute("aria-label") || "")) return el;
     }
     return null;
+  }
+
+  // Decide se ESTA mensagem específica ainda está tocando. Primeiro olha
+  // pro próprio botão que clicamos (o WhatsApp normalmente reaproveita o
+  // mesmo elemento e só troca o aria-label entre "reproduzir"/"pausar");
+  // só se isso não for conclusivo é que procura dentro do container da
+  // mensagem (nunca no documento inteiro — ver comentário acima).
+  function isMessagePausing(playButton, container) {
+    const ownLabel = playButton.getAttribute("aria-label") || "";
+    if (PAUSE_LABEL_RE.test(ownLabel)) return true;
+    if (PLAY_LABEL_RE.test(ownLabel)) return false;
+    return Boolean(findPauseElement(container));
   }
 
   function clickElement(el) {
@@ -148,14 +176,24 @@
 
     clickElement(playButton);
 
-    // Para de gravar assim que detectar que a mensagem voltou a mostrar
-    // "reproduzir" (ou seja, já tocou inteira) — sem isso, espera o tempo
-    // máximo sempre.
+    // Para de gravar assim que detectar que ESTA mensagem (e só ela)
+    // voltou a mostrar "reproduzir" (ou seja, já tocou inteira) — sem
+    // isso, espera o tempo máximo sempre.
+    //
+    // Importante: o WhatsApp às vezes encadeia a reprodução automática de
+    // vários áudios de voz seguidos (termina um, já começa o próximo
+    // sozinho). Por isso NUNCA olhamos pro documento inteiro aqui — só
+    // pro botão que a gente mesmo clicou (ou, no máximo, pra dentro da
+    // mensagem dele). Se olhássemos pro documento inteiro, um "pausar"
+    // que apareceu no áudio seguinte (que o WhatsApp tocou sozinho)
+    // fazia a gente achar que o áudio clicado ainda tava tocando, e a
+    // gravação continuava e grudava o áudio seguinte na transcrição —
+    // mesmo sem o usuário ter clicado em transcrever esse outro áudio.
     const start = Date.now();
     let sawPause = false;
     while (Date.now() - start < MAX_RECORD_MS) {
-      const pauseEl = findPauseElement(container) || findPauseElement(document);
-      if (pauseEl) {
+      const stillPlayingThisMessage = isMessagePausing(playButton, container);
+      if (stillPlayingThisMessage) {
         sawPause = true;
       } else if (sawPause) {
         break;
@@ -215,8 +253,11 @@
   }
 
   function showResult(resultEl, text, isError) {
-    resultEl.textContent = text;
+    const textEl = resultEl.__ovyTextEl;
+    if (textEl) textEl.textContent = text;
+    else resultEl.textContent = text; // fallback de segurança, não deve acontecer
     resultEl.classList.toggle("ovy-error", Boolean(isError));
+    resultEl.__ovyVisible = true;
     resultEl.style.display = "block";
     // Reposiciona já com o conteúdo novo — o texto pode ser mais alto ou
     // mais baixo que a "Transcrevendo…" anterior, e precisa decidir de
@@ -258,6 +299,25 @@
     return playButton.parentElement;
   }
 
+  // O WhatsApp Web usa uma lista "virtualizada": conforme você rola a
+  // conversa, ele reaproveita os MESMOS nós do DOM pra desenhar mensagens
+  // diferentes (em vez de criar nó novo pra cada uma). Isso significa que
+  // uma referência guardada (bubble/container) pode continuar "presente"
+  // no documento, só que agora representando outra mensagem qualquer — e
+  // é exatamente isso que fazia a caixa de transcrição "descolar" do
+  // áudio certo e ficar flutuando perto do canto da tela (ancorada em
+  // coordenadas de um nó que já não é mais aquele áudio, às vezes até
+  // zerado). Cada linha de mensagem tem um `data-id` próprio que muda
+  // quando o nó é reaproveitado pra outra mensagem — usamos isso como
+  // "identidade" pra saber se ainda é a mesma.
+  function captureIdentity(container) {
+    if (!container) return null;
+    const withId = container.hasAttribute && container.hasAttribute("data-id")
+      ? container
+      : container.querySelector && container.querySelector("[data-id]");
+    return withId ? withId.getAttribute("data-id") : null;
+  }
+
   function attachButtonUnsafe(playButton) {
     // A logo precisa ficar SEMPRE por cima de qualquer mensagem (inclusive
     // as que vêm depois, mais abaixo na conversa). Anexada como filha da
@@ -269,6 +329,7 @@
     const container = findMessageContainer(playButton);
     const outgoing = isOutgoingByPosition(playButton, container);
     const bubble = findNarrowBubble(playButton, container) || container || playButton.parentElement;
+    const identity = captureIdentity(container);
 
     const button = document.createElement("button");
     button.className = "ovy-btn";
@@ -282,6 +343,30 @@
     const resultEl = document.createElement("div");
     resultEl.className = "ovy-result";
     resultEl.style.display = "none";
+    resultEl.__ovyVisible = false; // controla a intenção do usuário (fechou ou não), separado do CSS
+
+    const resultText = document.createElement("div");
+    resultText.className = "ovy-result-text";
+    resultEl.__ovyTextEl = resultText;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "ovy-result-close";
+    closeBtn.setAttribute("aria-label", "Fechar resultado da transcrição");
+    closeBtn.title = "Fechar";
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      // Só esconde — a transcrição já foi enviada e salva no histórico do
+      // Ovy assim que ficou pronta, então fechar aqui não apaga nada. O
+      // botão continua no lugar, podendo transcrever de novo se precisar.
+      resultEl.__ovyVisible = false;
+      resultEl.style.display = "none";
+    });
+
+    resultEl.appendChild(closeBtn);
+    resultEl.appendChild(resultText);
 
     document.body.appendChild(button);
     document.body.appendChild(resultEl);
@@ -291,7 +376,24 @@
         cleanup();
         return;
       }
+      if (identity && captureIdentity(container) !== identity) {
+        // Nó reaproveitado pra outra mensagem — não é mais "nosso" áudio.
+        cleanup();
+        return;
+      }
       const rect = bubble.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        // Tamanho zero costuma significar que a lista virtualizada tirou
+        // esse nó de cena momentaneamente. Em vez de grudar a caixa no
+        // canto da tela com coordenadas erradas, só escondemos tudo até
+        // a próxima varredura decidir se ele volta ou se é removido de
+        // verdade (acima).
+        button.style.display = "none";
+        resultEl.style.display = "none";
+        return;
+      }
+      button.style.display = "";
+      if (resultEl.__ovyVisible) resultEl.style.display = "block";
       const top = rect.bottom - 14;
       button.style.top = `${top}px`;
       if (outgoing) {
