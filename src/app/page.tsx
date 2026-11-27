@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/landing/site-header";
 import { SiteFooter } from "@/components/landing/site-footer";
+import { InfoTooltip } from "@/components/info-tooltip";
 import { ProductMockup, Waveform } from "@/components/landing/product-mockup";
 import { EditorMockup } from "@/components/landing/editor-mockup";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
@@ -361,7 +362,11 @@ export default async function LandingPage() {
                   <Check className="h-4 w-4" /> Exportação em PDF e Word
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4" /> Histórico sincronizado
+                  <Check className="h-4 w-4" /> Histórico sincronizado{" "}
+                  <InfoTooltip
+                    text="Suas transcrições salvas ficam disponíveis em todos os seus dispositivos. Basta entrar na mesma conta para acessar seu histórico."
+                    iconClassName="text-violet-200 hover:text-white"
+                  />
                 </li>
               </ul>
               <Link

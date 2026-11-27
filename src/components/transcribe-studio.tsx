@@ -163,6 +163,11 @@ export function TranscribeStudio({ minutesLeft }: { minutesLeft: number }) {
         transcriptionId={result.id}
         faithfulText={result.faithfulText}
         organizedText={result.organizedText}
+        // Fechar (X) só oculta a caixa — a transcrição já está salva no
+        // histórico desde que foi criada, e continua lá para ser reaberta.
+        onClose={() => setResult(null)}
+        // Descartar apaga de verdade e também volta pro estado inicial,
+        // permitindo começar uma nova transcrição normalmente.
         onDiscard={() => setResult(null)}
       />
     );

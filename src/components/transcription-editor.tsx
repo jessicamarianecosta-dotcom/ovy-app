@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, Save, Trash2, FileDown } from "lucide-react";
+import { Copy, Save, Trash2, FileDown, X, ClipboardCopy } from "lucide-react";
 
 type Version = "faithful" | "organized";
 
@@ -14,6 +14,7 @@ export function TranscriptionEditor({
   editedText,
   initialVersion = "organized",
   onDiscard,
+  onClose,
   readOnlyTitle,
 }: {
   transcriptionId: string;
@@ -21,7 +22,15 @@ export function TranscriptionEditor({
   organizedText: string;
   editedText?: string | null;
   initialVersion?: Version;
+  /** Chamado ao clicar em "Descartar": apaga a transcrição definitivamente. */
   onDiscard?: () => void;
+  /**
+   * Chamado ao clicar no X: apenas fecha/oculta a caixa de resultado, sem
+   * apagar nada. A transcrição já está salva no histórico desde que foi
+   * criada (ver /api/transcribe), então fechar nunca perde conteúdo — o
+   * usuário pode reabrir essa mesma transcrição pelo histórico depois.
+   */
+  onClose?: () => void;
   readOnlyTitle?: string;
 }) {
   const router = useRouter();
@@ -31,6 +40,7 @@ export function TranscriptionEditor({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   function switchVersion(next: Version) {
     setVersion(next);
@@ -40,6 +50,17 @@ export function TranscriptionEditor({
   async function copyToClipboard() {
     await navigator.clipboard.writeText(text);
     toast.success("Texto copiado.");
+  }
+
+  async function copySelectionToClipboard() {
+    const el = textareaRef.current;
+    const selected = el ? text.slice(el.selectionStart, el.selectionEnd) : "";
+    if (!selected) {
+      toast.error("Selecione um trecho do texto para copiar só a seleção.");
+      return;
+    }
+    await navigator.clipboard.writeText(selected);
+    toast.success("Seleção copiada.");
   }
 
   async function save() {
@@ -83,9 +104,21 @@ export function TranscriptionEditor({
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+    <div className="relative rounded-2xl border border-neutral-200 bg-white p-6">
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar resultado da transcrição"
+          title="Fechar"
+          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+
       {readOnlyTitle && (
-        <h2 className="mb-4 text-lg font-semibold">{readOnlyTitle}</h2>
+        <h2 className="mb-4 pr-10 text-lg font-semibold">{readOnlyTitle}</h2>
       )}
 
       <div className="flex gap-2">
@@ -114,6 +147,7 @@ export function TranscriptionEditor({
       </div>
 
       <textarea
+        ref={textareaRef}
         value={text}
         onChange={(event) => setText(event.target.value)}
         rows={14}
@@ -127,7 +161,15 @@ export function TranscriptionEditor({
           className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50"
         >
           <Copy className="h-4 w-4" />
-          Copiar
+          Copiar tudo
+        </button>
+        <button
+          type="button"
+          onClick={copySelectionToClipboard}
+          className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50"
+        >
+          <ClipboardCopy className="h-4 w-4" />
+          Copiar seleção
         </button>
         <button
           type="button"
